@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal OS — v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080809;
+      --surface: rgba(255,255,255,0.038);
+      --surface-hi: rgba(255,255,255,0.065);
+      --border: rgba(255,255,255,0.07);
+      --border-hi: rgba(255,255,255,0.16);
+      --sky: #93c5fd;
+      --violet: #c4b5fd;
+      --emerald: #6ee7b7;
+      --amber: #fcd34d;
+      --rose: #fda4af;
+      --t1: #f1f5f9; --t2: #94a3b8; --t3: #475569;
+      --ui: 'Inter', sans-serif;
+      --side: 200px;
+    }
+
+    html, body { width:100%; height:100%; background:var(--bg); color:var(--t1); font-family:var(--ui); overflow:hidden; }
+
+    /* ── AMBIENT ORBS (floating) ── */
+    .orb { position:fixed; border-radius:50%; pointer-events:none; z-index:0; }
+    .orb-1 { width:800px; height:800px; background:radial-gradient(circle,rgba(196,181,253,0.11) 0%,transparent 65%); top:-300px; left:0; animation:float1 38s ease-in-out infinite; }
+    .orb-2 { width:600px; height:600px; background:radial-gradient(circle,rgba(147,197,253,0.09) 0%,transparent 65%); top:100px; right:-150px; animation:float2 28s ease-in-out infinite; }
+    .orb-3 { width:500px; height:500px; background:radial-gradient(circle,rgba(110,231,183,0.07) 0%,transparent 65%); bottom:-80px; left:350px; animation:float3 34s ease-in-out infinite; }
+    .orb-4 { width:400px; height:400px; background:radial-gradient(circle,rgba(253,164,175,0.06) 0%,transparent 65%); bottom:100px; right:200px; animation:float2 42s ease-in-out infinite reverse; }
+
+    @keyframes float1 { 0%,100%{transform:translate(0,0)} 25%{transform:translate(45px,-35px)} 50%{transform:translate(20px,50px)} 75%{transform:translate(-35px,15px)} }
+    @keyframes float2 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(-40px,30px)} 66%{transform:translate(30px,-40px)} }
+    @keyframes float3 { 0%,100%{transform:translate(0,0)} 40%{transform:translate(35px,25px)} 70%{transform:translate(-25px,-35px)} }
+
+    .app { display:flex; height:100vh; position:relative; z-index:1; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width:var(--side); flex-shrink:0;
+      background:rgba(10,10,12,0.82);
+      border-right:1px solid var(--border);
+      backdrop-filter:blur(28px);
+      display:flex; flex-direction:column;
+    }
+    .logo { padding:24px 20px 20px; }
+    .logo-name { font-size:14px; font-weight:600; letter-spacing:-.01em; }
+    .logo-ver  { font-size:11px; color:var(--t3); margin-top:2px; font-weight:300; }
+    .nav { flex:1; padding:6px 10px; overflow-y:auto; }
+    .nav-group-label { font-size:10px; font-weight:500; letter-spacing:.08em; color:var(--t3); text-transform:uppercase; padding:14px 10px 5px; }
+    .nav-item {
+      display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px;
+      cursor:pointer; transition:all .18s; color:var(--t2); position:relative; overflow:hidden;
+    }
+    .nav-item::before { content:''; position:absolute; inset:0; opacity:0; transition:opacity .18s; background:linear-gradient(90deg, rgba(196,181,253,.08), rgba(147,197,253,.04)); border-radius:8px; }
+    .nav-item:hover { color:var(--t1); }
+    .nav-item:hover::before { opacity:.6; }
+    .nav-item.active { color:var(--t1); }
+    .nav-item.active::before { opacity:1; }
+    .nav-item.active::after { content:''; position:absolute; left:0; top:50%; transform:translateY(-50%); width:3px; height:18px; border-radius:0 2px 2px 0; background:linear-gradient(180deg,var(--violet),var(--sky)); box-shadow:0 0 10px rgba(196,181,253,.5); }
+    .nav-item svg { width:15px; height:15px; flex-shrink:0; transition:color .18s; }
+    .nav-label { font-size:13px; font-weight:400; }
+    .nav-pill { margin-left:auto; font-size:10px; font-weight:600; padding:1px 7px; border-radius:20px; background:rgba(255,255,255,.08); color:var(--t3); }
+    .nav-pill.sky     { background:rgba(147,197,253,.14); color:var(--sky); }
+    .nav-pill.emerald { background:rgba(110,231,183,.14); color:var(--emerald); }
+    .nav-pill.rose    { background:rgba(253,164,175,.14); color:var(--rose); }
+    .sidebar-footer { padding:16px 20px; border-top:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+    .status-orb { width:7px; height:7px; border-radius:50%; background:var(--emerald); box-shadow:0 0 10px rgba(110,231,183,.7); animation:breathe 3s ease-in-out infinite; }
+    .status-txt { font-size:11px; color:var(--t3); }
+
+    /* ── TOPBAR / PRIORITY BAR ── */
+    .workspace { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+    .topbar {
+      min-height:64px; display:flex; align-items:center; padding:0 24px; gap:16px;
+      border-bottom:1px solid var(--border); background:rgba(8,8,9,0.82); backdrop-filter:blur(20px); flex-shrink:0;
+    }
+    .tb-priority-label {
+      font-size:13px; font-weight:700; letter-spacing:.10em; text-transform:uppercase;
+      color:var(--t2); flex-shrink:0;
+    }
+    .tb-sep { width:1px; height:28px; background:var(--border); flex-shrink:0; }
+    .tb-priority-input {
+      flex:1; background:transparent; border:none; outline:none;
+      font-size:18px; font-weight:300; color:#ff4444; font-family:var(--ui);
+      letter-spacing:-.01em; caret-color:#ff4444;
+    }
+    .tb-priority-input:empty::before {
+      content: attr(data-placeholder); color:var(--t3); pointer-events:none;
+    }
+
+    /* ── PANELS ── */
+    .panel { display:none; flex:1; overflow-y:auto; padding:20px 24px; }
+    .panel.active { display:block; animation:panelIn .28s cubic-bezier(.25,.46,.45,.94); }
+    @keyframes panelIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    ::-webkit-scrollbar { width:3px; } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+    /* ── GLASS CARD ── */
+    .card {
+      background:var(--surface); border:1px solid var(--border); border-radius:14px;
+      padding:20px; backdrop-filter:blur(24px);
+      transition:border-color .22s, background .22s, transform .28s cubic-bezier(.34,1.4,.64,1), box-shadow .28s;
+      position:relative; overflow:hidden;
+    }
+    .card:hover {
+      border-color:var(--border-hi); background:var(--surface-hi);
+      transform:translateY(-3px);
+      box-shadow:0 14px 48px rgba(0,0,0,.55), 0 1px 0 var(--border-hi) inset;
+    }
+    .card-label { font-size:11px; font-weight:500; color:var(--t3); margin-bottom:10px; letter-spacing:.02em; }
+    .card-val { font-size:36px; font-weight:200; line-height:1; letter-spacing:-.02em; }
+    .card-sub  { font-size:12px; color:var(--t2); margin-top:6px; font-weight:300; }
+
+    /* Card accent glows */
+    .glow-violet::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 20% 20%, rgba(196,181,253,.09), transparent 55%); pointer-events:none; border-radius:14px; }
+    .glow-sky::after    { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 80% 20%, rgba(147,197,253,.09), transparent 55%); pointer-events:none; border-radius:14px; }
+    .glow-emerald::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 20% 80%, rgba(110,231,183,.08), transparent 55%); pointer-events:none; border-radius:14px; }
+    .glow-amber::after  { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 80% 80%, rgba(252,211,77,.08), transparent 55%); pointer-events:none; border-radius:14px; }
+    .glow-rose::after   { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% 0%, rgba(253,164,175,.08), transparent 55%); pointer-events:none; border-radius:14px; }
+
+    /* ── BENTO ── */
+    .bento { display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:minmax(112px,auto); gap:11px; }
+    .b2 { grid-column:span 2; } .b3 { grid-column:span 3; } .b4 { grid-column:span 4; }
+    .br2 { grid-row:span 2; }
+
+    /* ── CLOCK ── */
+    .clock-display { font-size:68px; font-weight:200; letter-spacing:-.03em; line-height:1; position:relative; z-index:1; }
+    .clock-colon { color:var(--t3); animation:colonBlink 1s step-end infinite; }
+    .clock-date { font-size:13px; color:var(--t2); margin-top:8px; font-weight:300; position:relative; z-index:1; }
+    .seconds-bar { position:absolute; bottom:0; left:0; height:2px; background:linear-gradient(90deg,var(--violet),var(--sky)); border-radius:0 0 0 14px; transition:width 1s linear; }
+    @keyframes colonBlink { 0%,100%{opacity:.9} 50%{opacity:.15} }
+
+    /* ── SPARKLINE ── */
+    .sparkline-wrap { margin-top:12px; }
+    .spark-label { font-size:10px; color:var(--t3); margin-bottom:4px; }
+
+    /* ── PROGRESS ── */
+    .prog-track { height:3px; background:rgba(255,255,255,.06); border-radius:2px; overflow:hidden; }
+    .prog-fill  { height:100%; border-radius:2px; transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+
+    /* ── COLORS ── */
+    .sky{color:var(--sky)} .violet{color:var(--violet)} .emerald{color:var(--emerald)} .amber{color:var(--amber)} .rose{color:var(--rose)}
+
+    /* ── FEED ── */
+    .feed-row { display:flex; gap:12px; padding:9px 0; border-bottom:1px solid var(--border); align-items:flex-start; }
+    .feed-row:last-child { border-bottom:none; }
+    .fdot { width:5px; height:5px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+    .ftxt { font-size:12px; color:var(--t2); line-height:1.4; }
+    .ftime { font-size:10px; color:var(--t3); margin-top:2px; }
+
+    /* ── DASH TASKS (compact, inside dashboard card) ── */
+    .dtask {
+      display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:8px; cursor:pointer;
+      border:1px solid var(--border); background:var(--surface);
+      transition:border-color .18s, background .18s, transform .2s cubic-bezier(.34,1.4,.64,1);
+    }
+    .dtask:hover { border-color:var(--border-hi); background:var(--surface-hi); transform:translateX(2px); }
+    .dtask.done { opacity:.38; }
+    .dtask.done .task-text { text-decoration:line-through; }
+    .dtask.done .tchk { background:var(--emerald); border-color:var(--emerald); color:#0a0a0b; box-shadow:0 0 8px rgba(110,231,183,.4); }
+
+    /* ── TASKS ── */
+    .task-row {
+      display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:10px; cursor:pointer;
+      border:1px solid var(--border); margin-bottom:7px; background:var(--surface);
+      transition:border-color .18s, background .18s, transform .2s cubic-bezier(.34,1.4,.64,1);
+    }
+    .task-row:hover { border-color:var(--border-hi); background:var(--surface-hi); transform:translateX(3px); }
+    .task-row.done { opacity:.38; }
+    .task-row.done .task-text { text-decoration:line-through; }
+    .tchk { width:16px; height:16px; border-radius:5px; border:1px solid var(--border-hi); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; transition:all .2s; }
+    .task-row.done .tchk { background:var(--emerald); border-color:var(--emerald); color:#0a0a0b; box-shadow:0 0 8px rgba(110,231,183,.4); }
+    .tpri { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+    .task-text { flex:1; font-size:13px; font-weight:400; }
+    .ttag { font-size:10px; font-weight:500; padding:2px 8px; border-radius:6px; background:rgba(255,255,255,.06); color:var(--t2); }
+
+    /* ── MINI AGENT ROWS (dashboard card) ── */
+    .mini-agent-row { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); }
+    .mini-agent-row:last-child { border-bottom:none; }
+    .mini-agent-dot  { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .mini-agent-icon { font-size:12px; flex-shrink:0; }
+    .mini-agent-info { display:flex; flex-direction:column; flex-shrink:0; width:80px; overflow:hidden; }
+    .mini-agent-name { font-size:11px; font-weight:500; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mini-agent-role { font-size:9px; color:var(--t3); font-weight:400; }
+    .mini-hb { flex:1; overflow:hidden; height:14px; }
+    .sig-bars { display:flex; align-items:flex-end; gap:2px; height:14px; margin-left:auto; }
+    .sig-bar  { width:3px; border-radius:1px 1px 0 0; }
+    .sig-bar.em { background:var(--emerald); }
+    .sig-bar.am { background:var(--amber); }
+    .sig-bar.dim{ background:rgba(255,255,255,.08); }
+    .sig-bar.em.top { animation:breathe 2.4s ease-in-out infinite; }
+
+    /* ── TASK ADD FORM ── */
+    .tpri-sel { width:10px; height:10px; border-radius:50%; cursor:pointer; opacity:.35; transition:opacity .15s, transform .15s; }
+    .tpri-sel.active-sel { opacity:1; transform:scale(1.3); box-shadow:0 0 6px currentColor; }
+    .ttag-sel { font-size:10px; font-weight:500; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,.05); color:var(--t3); cursor:pointer; transition:all .15s; }
+    .ttag-sel.active-sel { background:rgba(147,197,253,.15); color:var(--sky); }
+    .task-del { font-size:12px; color:var(--t3); opacity:0; transition:opacity .15s; cursor:pointer; padding:0 4px; flex-shrink:0; }
+    .task-row:hover .task-del { opacity:1; }
+    .task-del:hover { color:var(--rose) !important; }
+    /* Drag handle */
+    .drag-handle { flex-shrink:0; color:var(--t3); opacity:0; cursor:grab; padding:0 4px; transition:opacity .15s; display:flex; align-items:center; }
+    .drag-handle:active { cursor:grabbing; }
+    .task-row:hover .drag-handle { opacity:1; }
+    /* Editable task text */
+    .task-text[contenteditable] { outline:none; cursor:text; border-radius:4px; padding:1px 3px; transition:background .15s; }
+    .task-text[contenteditable]:focus { background:rgba(255,255,255,.05); }
+    /* Drag-over indicator */
+    .task-row.drag-over-top    { border-top:2px solid var(--violet); margin-top:-1px; }
+    .task-row.drag-over-bottom { border-bottom:2px solid var(--violet); }
+
+    /* ── AGENTS ── */
+    .agent-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .acard {
+      background:var(--surface); border:1px solid var(--border); border-radius:14px;
+      padding:18px; backdrop-filter:blur(24px);
+      transition:border-color .22s, background .22s, transform .28s cubic-bezier(.34,1.4,.64,1), box-shadow .28s;
+    }
+    .acard:hover { border-color:var(--border-hi); background:var(--surface-hi); transform:translateY(-3px); box-shadow:0 14px 48px rgba(0,0,0,.5); }
+    .acard.alive { border-color:rgba(110,231,183,.2); }
+    .acard.idle  { border-color:rgba(252,211,77,.18); }
+    .ahead { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .aavatar { width:36px; height:36px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; background:rgba(255,255,255,.05); border:1px solid var(--border); }
+    .aname { font-size:13px; font-weight:500; }
+    .arole { font-size:11px; color:var(--t3); margin-top:1px; }
+    .astat { display:flex; align-items:center; gap:5px; margin-left:auto; }
+    .astat-dot { width:7px; height:7px; border-radius:50%; }
+    .alive .astat-dot { background:var(--emerald); box-shadow:0 0 7px rgba(110,231,183,.8); animation:breathe 1.8s ease-in-out infinite; }
+    .idle  .astat-dot { background:var(--amber); box-shadow:0 0 7px rgba(252,211,77,.6); animation:breathe 4s ease-in-out infinite; }
+    .astat-lbl { font-size:10px; color:var(--t3); font-weight:500; letter-spacing:.05em; text-transform:uppercase; }
+
+    /* Animated heartbeat */
+    .hb-container { overflow:hidden; height:28px; margin:10px 0; border-radius:4px; }
+    .hb-wave { animation:hbScroll 3s linear infinite; }
+    .hb-wave.slow { animation-duration:5s; }
+    @keyframes hbScroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+    .atask { font-size:11px; color:var(--t2); border-top:1px solid var(--border); padding-top:10px; line-height:1.5; }
+    .ats { font-size:10px; color:var(--t3); margin-top:6px; }
+
+    /* ── MARKETS CARD ── */
+    .mkt-row { display:flex; align-items:center; gap:6px; }
+    .mkt-name { font-size:10px; font-weight:500; color:var(--t3); letter-spacing:.04em; width:56px; flex-shrink:0; }
+    .mkt-val  { font-size:13px; font-weight:400; font-variant-numeric:tabular-nums; flex:1; }
+    .mkt-chg  { font-size:11px; font-weight:400; font-variant-numeric:tabular-nums; text-align:right; min-width:52px; }
+    .mkt-up   { color:var(--emerald); }
+    .mkt-dn   { color:var(--rose); }
+    .mkt-divider { height:1px; background:var(--border); margin:3px 0; }
+
+    /* ── FINANCES ── */
+    .fbig { font-size:42px; font-weight:200; letter-spacing:-.02em; }
+    .brow { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+    .blabel { font-size:11px; color:var(--t2); width:90px; flex-shrink:0; }
+    .bamount { font-size:11px; color:var(--t2); width:52px; text-align:right; flex-shrink:0; }
+
+    /* ── HEALTH ── */
+    .ring-wrap { position:relative; width:110px; height:110px; margin:0 auto 12px; }
+    .ring-wrap svg { transform:rotate(-90deg); }
+    .ring-num { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .rscore { font-size:30px; font-weight:200; letter-spacing:-.02em; }
+    .rlabel { font-size:9px; color:var(--t3); font-weight:500; letter-spacing:.08em; text-transform:uppercase; margin-top:1px; }
+    .hrow { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); }
+    .hrow:last-child { border-bottom:none; }
+    .hname { font-size:12px; color:var(--t2); font-weight:300; }
+    .hval  { font-size:13px; font-weight:400; }
+    .whoop-note { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--amber); background:rgba(252,211,77,.08); border:1px solid rgba(252,211,77,.2); border-radius:8px; padding:5px 12px; margin-bottom:16px; }
+
+    /* ── MINI CALENDAR ── */
+    .mini-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+    .mini-cal-dow  { font-size:8px; color:var(--t3); text-align:center; font-weight:500; letter-spacing:.04em; padding-bottom:3px; }
+    .mini-cal-day  { font-size:10px; text-align:center; padding:2px 0; border-radius:4px; cursor:default; color:var(--t2); line-height:1.6; }
+    .mini-cal-day.today { background:var(--sky); color:#0a0a0b; font-weight:600; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; margin:0 auto; }
+    .mini-cal-day.has-event { color:var(--t1); }
+    .mini-cal-day.has-event::after { content:'·'; display:block; font-size:14px; line-height:0; margin-top:-2px; color:var(--violet); }
+    .mini-cal-day.empty { color:transparent; }
+
+    /* ── FULL CALENDAR ── */
+    .cal-full-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+    .cal-full-dow  { font-size:10px; color:var(--t3); text-align:center; font-weight:500; letter-spacing:.06em; text-transform:uppercase; padding-bottom:6px; }
+    .cal-full-day  { min-height:72px; border-radius:10px; border:1px solid var(--border); background:var(--surface); padding:8px; cursor:pointer; transition:border-color .18s, background .18s; }
+    .cal-full-day:hover { border-color:var(--border-hi); background:var(--surface-hi); }
+    .cal-full-day.today { border-color:rgba(147,197,253,.4); background:rgba(147,197,253,.05); }
+    .cal-full-day.today .cal-full-daynum { color:var(--sky); font-weight:600; }
+    .cal-full-day.empty { border-color:transparent; background:transparent; cursor:default; }
+    .cal-full-day.empty:hover { border-color:transparent; background:transparent; }
+    .cal-full-daynum { font-size:12px; color:var(--t2); margin-bottom:4px; }
+    .cal-event-chip { font-size:9px; font-weight:500; padding:2px 5px; border-radius:4px; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .chip-sky    { background:rgba(147,197,253,.15); color:var(--sky); }
+    .chip-violet { background:rgba(196,181,253,.15); color:var(--violet); }
+    .chip-emerald{ background:rgba(110,231,183,.15); color:var(--emerald); }
+    .chip-amber  { background:rgba(252,211,77,.15);  color:var(--amber); }
+
+    /* ── COMMS ── */
+    .email-row { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); align-items:flex-start; }
+    .email-row:last-child { border-bottom:none; }
+    .cal-row { padding:12px; border-radius:10px; border:1px solid var(--border); margin-bottom:8px; background:var(--surface); transition:border-color .18s, background .18s, transform .2s; }
+    .cal-row:hover { border-color:var(--border-hi); background:var(--surface-hi); transform:translateX(3px); }
+    .cal-row.next { border-color:rgba(147,197,253,.25); background:rgba(147,197,253,.04); }
+    .cal-time { font-size:10px; color:var(--t3); text-transform:uppercase; letter-spacing:.06em; font-weight:500; }
+    .cal-row.next .cal-time { color:var(--sky); }
+    .cal-name { font-size:13px; margin-top:3px; font-weight:400; }
+    .cal-sub  { font-size:11px; color:var(--t3); margin-top:2px; font-weight:300; }
+
+    /* ── LAYOUT HELPERS ── */
+    .g2 { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:12px; }
+    .g3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:12px; }
+    .panel-header { margin-bottom:20px; }
+    .panel-title { font-size:20px; font-weight:300; letter-spacing:-.01em; }
+    .panel-sub { font-size:12px; color:var(--t3); margin-top:3px; font-weight:300; }
+
+    /* Coming Up redesign */
+    .upcoming-list { display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+    .upcoming-item {
+      flex:1; min-width:170px; padding:12px 14px; border-radius:10px; border:1px solid var(--border);
+      background:var(--surface); position:relative; overflow:hidden;
+      transition:border-color .18s, background .18s, transform .22s cubic-bezier(.34,1.4,.64,1);
+    }
+    .upcoming-item:hover { border-color:var(--border-hi); background:var(--surface-hi); transform:translateY(-2px); }
+    .upcoming-item::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:0; }
+    .upcoming-item.sky::before { background:var(--sky); box-shadow:2px 0 8px rgba(147,197,253,.3); }
+    .upcoming-item.emerald::before { background:var(--emerald); box-shadow:2px 0 8px rgba(110,231,183,.3); }
+    .upcoming-item.amber::before { background:var(--amber); box-shadow:2px 0 8px rgba(252,211,77,.3); }
+    .upcoming-item.violet::before { background:var(--violet); box-shadow:2px 0 8px rgba(196,181,253,.3); }
+    .upcoming-time { font-size:10px; font-weight:500; letter-spacing:.04em; margin-bottom:4px; }
+    .upcoming-name { font-size:13px; font-weight:400; }
+    .upcoming-sub  { font-size:11px; color:var(--t3); margin-top:2px; }
+
+    /* Deploy agent card */
+    .deploy-card {
+      display:flex; align-items:center; justify-content:center; min-height:180px;
+      cursor:pointer; border-style:dashed; border-color:rgba(255,255,255,.06);
+      transition:all .22s;
+    }
+    .deploy-card:hover { border-color:rgba(255,255,255,.14); background:var(--surface); transform:translateY(-3px); }
+    .deploy-card:hover .deploy-icon { opacity:.5; }
+    .deploy-icon { font-size:26px; opacity:.18; margin-bottom:8px; transition:opacity .2s; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes breathe { 0%,100%{opacity:1} 50%{opacity:.3} }
+    @keyframes countUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Number count-up */
+    .countable { animation:countUp .5s ease-out both; }
+  </style>
+</head>
+<body>
+
+<!-- Ambient orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="orb orb-4"></div>
+
+<!-- SVG gradient defs for sparklines -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="sg-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#93c5fd" stop-opacity=".3"/>
+      <stop offset="100%" stop-color="#93c5fd" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sg-emerald" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6ee7b7" stop-opacity=".3"/>
+      <stop offset="100%" stop-color="#6ee7b7" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sg-rose" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fda4af" stop-opacity=".3"/>
+      <stop offset="100%" stop-color="#fda4af" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sg-amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fcd34d" stop-opacity=".3"/>
+      <stop offset="100%" stop-color="#fcd34d" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sg-violet" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c4b5fd" stop-opacity=".3"/>
+      <stop offset="100%" stop-color="#c4b5fd" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div id="tbdate" style="font-size:14px;font-weight:400;letter-spacing:-.01em;color:var(--t1)"></div>
+      <div id="tbclock" style="font-size:11px;font-weight:300;font-variant-numeric:tabular-nums;color:#6ee7b7;margin-top:2px;letter-spacing:.04em">00:00:00</div>
+    </div>
+    <div class="nav">
+      <div class="nav-group-label">Overview</div>
+      <div class="nav-item active" onclick="sw('dashboard',this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+        <span class="nav-label">Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="sw('calendar',this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span class="nav-label">Calendar</span>
+      </div>
+      <div class="nav-group-label">Work</div>
+      <div class="nav-item" onclick="sw('tasks',this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="nav-label">Tasks</span>
+        <span class="nav-pill">4</span>
+      </div>
+      <div class="nav-item" onclick="sw('agents',this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span class="nav-label">Agents</span>
+        <span class="nav-pill emerald">5</span>
+      </div>
+      <div class="nav-item" onclick="sw('comms',this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+        <span class="nav-label">Comms</span>
+        <span class="nav-pill rose">12</span>
+      </div>
+      <div class="nav-group-label">Life</div>
+      <div class="nav-item" onclick="sw('finances',this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span class="nav-label">Finances</span>
+      </div>
+      <div class="nav-item" onclick="sw('health',this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        <span class="nav-label">Health</span>
+      </div>
+      <div class="nav-item" onclick="sw('settings',this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="status-orb"></div>
+      <span class="status-txt">All systems running</span>
+    </div>
+  </nav>
+
+  <main class="workspace">
+    <div class="topbar">
+      <span class="tb-priority-label">Today's Priority</span>
+      <div class="tb-sep"></div>
+      <div class="tb-priority-input" contenteditable="true" data-placeholder="What's the one thing that needs to get done today?"></div>
+    </div>
+
+    <!-- ── DASHBOARD ── -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="bento">
+
+        <!-- Today's Tasks 2×2 -->
+        <div class="card b2 br2 glow-violet" style="display:flex;flex-direction:column;min-height:240px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="card-label" style="margin:0">Today's Tasks</div>
+            <div style="font-size:10px;color:var(--t3)" id="dash-task-count">3 of 7 done</div>
+          </div>
+          <div class="prog-track" style="margin-bottom:14px">
+            <div class="prog-fill" id="dash-task-prog" style="width:43%;background:linear-gradient(90deg,var(--sky),var(--violet));transition:width .6s ease"></div>
+          </div>
+          <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px">
+            <div class="dtask done" onclick="toggleDashTask(this)"><div class="tchk">✓</div><div class="tpri" style="background:var(--rose)"></div><span class="task-text" style="font-size:12px">Review Q2 budget report</span><span class="ttag">Finance</span></div>
+            <div class="dtask done" onclick="toggleDashTask(this)"><div class="tchk">✓</div><div class="tpri" style="background:var(--amber)"></div><span class="task-text" style="font-size:12px">Morning workout</span><span class="ttag">Health</span></div>
+            <div class="dtask done" onclick="toggleDashTask(this)"><div class="tchk">✓</div><div class="tpri" style="background:var(--emerald)"></div><span class="task-text" style="font-size:12px">Check agent Scout logs</span><span class="ttag">Work</span></div>
+            <div class="dtask" onclick="toggleDashTask(this)"><div class="tchk"></div><div class="tpri" style="background:var(--rose)"></div><span class="task-text" style="font-size:12px">Respond to 3 priority emails</span><span class="ttag">Work</span></div>
+            <div class="dtask" onclick="toggleDashTask(this)"><div class="tchk"></div><div class="tpri" style="background:var(--rose)"></div><span class="task-text" style="font-size:12px">Finalize dashboard UI design</span><span class="ttag">Personal</span></div>
+            <div class="dtask" onclick="toggleDashTask(this)"><div class="tchk"></div><div class="tpri" style="background:var(--amber)"></div><span class="task-text" style="font-size:12px">Connect WHOOP API</span><span class="ttag">Health</span></div>
+            <div class="dtask" onclick="toggleDashTask(this)"><div class="tchk"></div><div class="tpri" style="background:var(--emerald)"></div><span class="task-text" style="font-size:12px">Review subscription expenses</span><span class="ttag">Finance</span></div>
+          </div>
+        </div>
+
+        <!-- Active Focus -->
+        <div class="card glow-sky">
+          <div class="card-label">Active Focus</div>
+          <div style="font-size:15px;font-weight:500;color:var(--sky);margin-bottom:6px">Dashboard v2</div>
+          <div style="font-size:11px;color:var(--t2);line-height:1.6;font-weight:300">Bento layout, glassmorphism, award-winning UI.</div>
+          <div class="prog-track" style="margin-top:14px"><div class="prog-fill" id="focus-prog" style="width:0%;background:linear-gradient(90deg,var(--sky),var(--violet))"></div></div>
+          <div style="font-size:10px;color:var(--t3);margin-top:5px" id="focus-pct">0% complete</div>
+        </div>
+
+        <!-- Active Agents -->
+        <div class="card glow-emerald" style="display:flex;flex-direction:column;gap:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div class="card-label" style="margin:0">Active Agents</div>
+            <div style="font-size:10px;color:var(--emerald)" id="stat-agents">5 running</div>
+          </div>
+          <!-- Scout -->
+          <div class="mini-agent-row">
+            <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite"></div>
+            <span class="mini-agent-icon">🔍</span>
+            <div class="mini-agent-info"><span class="mini-agent-name">Sloane</span><span class="mini-agent-role">Research</span></div>
+            <div class="sig-bars"><div class="sig-bar em" style="height:4px"></div><div class="sig-bar em" style="height:7px"></div><div class="sig-bar em" style="height:10px"></div><div class="sig-bar em top" style="height:13px"></div></div>
+          </div>
+          <!-- Relay -->
+          <div class="mini-agent-row">
+            <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite .3s"></div>
+            <span class="mini-agent-icon">📡</span>
+            <div class="mini-agent-info"><span class="mini-agent-name">Morning Briefing Agent</span><span class="mini-agent-role">Briefing</span></div>
+            <div class="sig-bars"><div class="sig-bar em" style="height:4px"></div><div class="sig-bar em" style="height:7px"></div><div class="sig-bar em" style="height:10px"></div><div class="sig-bar em top" style="height:13px"></div></div>
+          </div>
+          <!-- Ledger -->
+          <div class="mini-agent-row">
+            <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite .6s"></div>
+            <span class="mini-agent-icon">💰</span>
+            <div class="mini-agent-info"><span class="mini-agent-name">Leo</span><span class="mini-agent-role">Finance</span></div>
+            <div class="sig-bars"><div class="sig-bar em" style="height:4px"></div><div class="sig-bar em" style="height:7px"></div><div class="sig-bar em" style="height:10px"></div><div class="sig-bar em top" style="height:13px"></div></div>
+          </div>
+          <!-- Chrono -->
+          <div class="mini-agent-row">
+            <div class="mini-agent-dot" style="background:var(--amber);box-shadow:0 0 6px rgba(252,211,77,.6);animation:breathe 4s ease-in-out infinite"></div>
+            <span class="mini-agent-icon">🗓️</span>
+            <div class="mini-agent-info"><span class="mini-agent-name">Scripty</span><span class="mini-agent-role">Schedule</span></div>
+            <div class="sig-bars"><div class="sig-bar am" style="height:4px"></div><div class="sig-bar am" style="height:7px"></div><div class="sig-bar dim" style="height:10px"></div><div class="sig-bar dim" style="height:13px"></div></div>
+          </div>
+          <!-- Cortex -->
+          <div class="mini-agent-row">
+            <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite .9s"></div>
+            <span class="mini-agent-icon">🧠</span>
+            <div class="mini-agent-info"><span class="mini-agent-name">Cortex</span><span class="mini-agent-role">General</span></div>
+            <div class="sig-bars"><div class="sig-bar em" style="height:4px"></div><div class="sig-bar em" style="height:7px"></div><div class="sig-bar em" style="height:10px"></div><div class="sig-bar em top" style="height:13px"></div></div>
+          </div>
+        </div>
+
+        <!-- Tasks Today -->
+        <div class="card">
+          <div class="card-label">Tasks Today</div>
+          <div style="display:flex;align-items:baseline;gap:6px">
+            <div class="card-val sky countable" id="stat-tasks">0</div>
+            <div style="font-size:14px;color:var(--t3);font-weight:300">/ 7</div>
+          </div>
+          <div class="card-sub">4 remaining</div>
+          <div class="sparkline-wrap">
+            <svg width="100%" height="22" viewBox="0 0 120 22" preserveAspectRatio="none">
+              <polygon points="0,22 0,16 20,14 40,18 60,13 80,10 100,7 120,5 120,22" fill="url(#sg-sky)"/>
+              <polyline points="0,16 20,14 40,18 60,13 80,10 100,7 120,5" stroke="#93c5fd" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Recovery -->
+        <div class="card glow-emerald">
+          <div class="card-label">Recovery</div>
+          <div class="card-val emerald countable" id="stat-rec">0<span style="font-size:18px;color:var(--t3)">%</span></div>
+          <div class="card-sub emerald">Good · WHOOP</div>
+          <div class="sparkline-wrap">
+            <svg width="100%" height="22" viewBox="0 0 120 22" preserveAspectRatio="none">
+              <defs><linearGradient id="sg-em2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6ee7b7" stop-opacity=".25"/><stop offset="100%" stop-color="#6ee7b7" stop-opacity="0"/></linearGradient></defs>
+              <polygon points="0,22 0,16 15,14 30,12 45,9 60,10 75,6 90,4 105,2 120,0 120,22" fill="url(#sg-em2)"/>
+              <polyline points="0,16 15,14 30,12 45,9 60,10 75,6 90,4 105,2 120,0" stroke="#6ee7b7" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Mini Calendar -->
+        <div class="card glow-sky" style="padding:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="card-label" style="margin:0" id="mini-cal-month">April 2026</div>
+            <div style="font-size:10px;color:var(--sky)">Today</div>
+          </div>
+          <div id="mini-cal"></div>
+        </div>
+
+        <!-- Markets -->
+        <div class="card glow-amber" id="markets-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div class="card-label" style="margin:0">Markets</div>
+            <div id="mkt-status" style="font-size:9px;color:var(--t3);display:flex;align-items:center;gap:4px"><span id="mkt-dot" style="width:5px;height:5px;border-radius:50%;background:var(--t3);display:inline-block"></span><span id="mkt-lbl">Loading</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="mkt-row"><span class="mkt-name">DOW</span><span class="mkt-val" id="mkt-dow">—</span><span class="mkt-chg" id="mkt-dow-chg">—</span></div>
+            <div class="mkt-row"><span class="mkt-name">NASDAQ</span><span class="mkt-val" id="mkt-ndx">—</span><span class="mkt-chg" id="mkt-ndx-chg">—</span></div>
+            <div class="mkt-row"><span class="mkt-name">S&amp;P 500</span><span class="mkt-val" id="mkt-spx">—</span><span class="mkt-chg" id="mkt-spx-chg">—</span></div>
+            <div class="mkt-row"><span class="mkt-name">10Y Yield</span><span class="mkt-val" id="mkt-tny">—</span><span class="mkt-chg" id="mkt-tny-chg">—</span></div>
+            <div class="mkt-divider"></div>
+            <div class="mkt-row"><span class="mkt-name">WTI Crude</span><span class="mkt-val" id="mkt-oil">—</span><span class="mkt-chg" id="mkt-oil-chg">—</span></div>
+            <div class="mkt-row"><span class="mkt-name">Nat Gas</span><span class="mkt-val" id="mkt-gas">—</span><span class="mkt-chg" id="mkt-gas-chg">—</span></div>
+            <div class="mkt-row"><span class="mkt-name">Gold</span><span class="mkt-val" id="mkt-gld">—</span><span class="mkt-chg" id="mkt-gld-chg">—</span></div>
+            <div class="mkt-row"><span class="mkt-name">VIX</span><span class="mkt-val" id="mkt-vix">—</span><span class="mkt-chg" id="mkt-vix-chg">—</span></div>
+          </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="card b2">
+          <div class="card-label">Recent Activity</div>
+          <div class="feed-row"><div class="fdot" style="background:var(--emerald)"></div><div><div class="ftxt">Agent Scout completed market research sweep</div><div class="ftime">2 min ago</div></div></div>
+          <div class="feed-row"><div class="fdot" style="background:var(--sky)"></div><div><div class="ftxt">Task "Review Q2 finances" marked complete</div><div class="ftime">18 min ago</div></div></div>
+          <div class="feed-row"><div class="fdot" style="background:var(--amber)"></div><div><div class="ftxt">Agent Relay flagged 3 priority emails</div><div class="ftime">42 min ago</div></div></div>
+          <div class="feed-row"><div class="fdot" style="background:var(--violet)"></div><div><div class="ftxt">WHOOP sync: Recovery updated to 84%</div><div class="ftime">1 hr ago</div></div></div>
+        </div>
+
+        <!-- Coming Up — full width -->
+        <div class="card b4">
+          <div class="card-label" style="margin-bottom:12px">Coming Up</div>
+          <div class="upcoming-list" id="coming-up-list"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── TASKS ── -->
+    <div class="panel" id="panel-tasks">
+      <div class="panel-header" style="display:flex;align-items:baseline;justify-content:space-between">
+        <div><div class="panel-title">Tasks</div><div class="panel-sub" id="tasks-sub"></div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--t3)" id="tasks-pct-label"></span>
+          <div class="prog-track" style="width:120px"><div class="prog-fill" id="tasks-prog" style="width:0%;background:linear-gradient(90deg,var(--sky),var(--violet))"></div></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div id="task-list-wrap"></div>
+        <div>
+          <!-- Add Task -->
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-label">Add Task</div>
+            <input id="task-input" type="text" placeholder="What needs to get done?" autocomplete="off"
+              style="width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--t1);font-family:var(--ui);outline:none;margin-top:6px;transition:border-color .18s"
+              onfocus="this.style.borderColor='var(--border-hi)'" onblur="this.style.borderColor='var(--border)'"
+              onkeydown="if(event.key==='Enter')commitTask()">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+              <div style="display:flex;gap:6px;align-items:center">
+                <span style="font-size:10px;color:var(--t3);margin-right:2px">Priority</span>
+                <div class="tpri-sel active-sel" data-pri="rose"   style="background:var(--rose)"   onclick="selPri('rose')"   title="High"></div>
+                <div class="tpri-sel"             data-pri="amber"  style="background:var(--amber)"  onclick="selPri('amber')"  title="Medium"></div>
+                <div class="tpri-sel"             data-pri="emerald"style="background:var(--emerald)"onclick="selPri('emerald')"title="Low"></div>
+              </div>
+              <div style="display:flex;gap:5px">
+                <div class="ttag-sel active-sel" data-tag="Work"    onclick="selTag('Work')">Work</div>
+                <div class="ttag-sel"            data-tag="Health"  onclick="selTag('Health')">Health</div>
+                <div class="ttag-sel"            data-tag="Finance" onclick="selTag('Finance')">Finance</div>
+                <div class="ttag-sel"            data-tag="Personal"onclick="selTag('Personal')">Personal</div>
+              </div>
+            </div>
+            <div onclick="commitTask()" style="margin-top:10px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--t2);text-align:center;cursor:pointer;transition:all .18s"
+              onmouseover="this.style.borderColor='var(--border-hi)';this.style.color='var(--t1)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">
+              + Add Task
+            </div>
+          </div>
+          <!-- By Category -->
+          <div class="card">
+            <div class="card-label">By Category</div>
+            <div style="margin-top:10px" id="cat-breakdown"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AGENTS ── -->
+    <div class="panel" id="panel-agents">
+      <div class="panel-header"><div class="panel-title">Agents</div><div class="panel-sub">5 active · 0 errors · last heartbeat 12s ago</div></div>
+      <div class="agent-grid">
+
+        <div class="acard alive">
+          <div class="ahead"><div class="aavatar">🔍</div><div><div class="aname">Sloane</div><div class="arole">Research &amp; Intel</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
+          <div class="hb-container">
+            <svg class="hb-wave" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
+              <polyline points="0,14 20,14 30,3 40,25 50,14 70,14 80,6 90,22 100,14 120,14 130,4 140,24 150,14 170,14 180,8 190,20 200,14 220,14 230,3 240,25 250,14 270,14 280,6 290,22 300,14 320,14 330,4 340,24 350,14 370,14 380,8 390,20 400,14" stroke="#6ee7b7" stroke-width="1.3" fill="none"/>
+            </svg>
+          </div>
+          <div class="atask">Monitoring 12 market feeds. Last: NVDA +2.4%, crypto stable.</div>
+          <div class="ats">Last active 2 min ago · 847 tasks completed</div>
+        </div>
+
+        <div class="acard alive">
+          <div class="ahead"><div class="aavatar">📡</div><div><div class="aname">Morning Briefing Agent</div><div class="arole">Daily Briefing</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
+          <div class="hb-container">
+            <svg class="hb-wave" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
+              <polyline points="0,14 15,14 25,5 35,23 45,14 65,14 75,3 85,25 95,14 115,14 125,7 135,21 145,14 165,14 175,6 185,22 195,14 215,14 225,5 235,23 245,14 265,14 275,3 285,25 295,14 315,14 325,7 335,21 345,14 365,14 375,6 385,22 395,14" stroke="#6ee7b7" stroke-width="1.3" fill="none"/>
+            </svg>
+          </div>
+          <div class="atask">Triaged 34 emails. Flagged 3 priority. 2 drafts pending approval.</div>
+          <div class="ats">Last active 5 min ago · 2,341 tasks completed</div>
+        </div>
+
+        <div class="acard alive">
+          <div class="ahead"><div class="aavatar">💰</div><div><div class="aname">Leo</div><div class="arole">Finance Tracking</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
+          <div class="hb-container">
+            <svg class="hb-wave" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
+              <polyline points="0,14 20,14 28,7 36,21 44,14 60,14 68,4 76,24 84,14 100,14 108,8 116,20 124,14 140,14 148,6 156,22 164,14 180,14 188,7 196,21 204,14 220,14 228,4 236,24 244,14 260,14 268,8 276,20 284,14 300,14 308,6 316,22 324,14 340,14 348,7 356,21 364,14 380,14 388,8 396,20 400,14" stroke="#6ee7b7" stroke-width="1.3" fill="none"/>
+            </svg>
+          </div>
+          <div class="atask">8 new transactions categorized. Monthly spend on track. No anomalies.</div>
+          <div class="ats">Last active 11 min ago · 512 tasks completed</div>
+        </div>
+
+        <div class="acard idle">
+          <div class="ahead"><div class="aavatar">🗓️</div><div><div class="aname">Scripty</div><div class="arole">Scheduling</div></div><div class="astat"><div class="astat-dot" style="background:var(--amber);box-shadow:0 0 7px rgba(252,211,77,.6)"></div><span class="astat-lbl" style="color:var(--amber)">Idle</span></div></div>
+          <div class="hb-container">
+            <svg class="hb-wave slow" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
+              <polyline points="0,14 40,14 50,9 60,19 70,14 110,14 120,10 130,18 140,14 180,14 190,9 200,19 210,14 250,14 260,10 270,18 280,14 320,14 330,9 340,19 350,14 390,14 400,12" stroke="#fcd34d" stroke-width="1.3" fill="none"/>
+            </svg>
+          </div>
+          <div class="atask">Standby. Next event: Team sync 9:00 AM. No scheduling conflicts.</div>
+          <div class="ats">Last active 1 hr ago · 203 tasks completed</div>
+        </div>
+
+        <div class="acard alive">
+          <div class="ahead"><div class="aavatar">🧠</div><div><div class="aname">Cortex</div><div class="arole">General Purpose</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
+          <div class="hb-container">
+            <svg class="hb-wave" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
+              <polyline points="0,14 10,14 18,2 26,26 34,14 42,14 50,7 58,21 66,14 76,14 84,4 92,24 100,14 110,14 118,2 126,26 134,14 142,14 150,7 158,21 166,14 176,14 184,4 192,24 200,14 210,14 218,2 226,26 234,14 242,14 250,7 258,21 266,14 276,14 284,4 292,24 300,14 310,14 318,2 326,26 334,14 342,14 350,7 358,21 366,14 376,14 384,4 392,24 400,14" stroke="#6ee7b7" stroke-width="1.3" fill="none"/>
+            </svg>
+          </div>
+          <div class="atask">Building v2 dashboard. Bento layout, glassmorphism, animated.</div>
+          <div class="ats">Last active just now · 9,847 tasks completed</div>
+        </div>
+
+        <div class="card deploy-card">
+          <div style="text-align:center">
+            <div class="deploy-icon">+</div>
+            <div style="font-size:12px;color:var(--t3);font-weight:400">Deploy Agent</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── COMMS ── -->
+    <div class="panel" id="panel-comms">
+      <div class="panel-header"><div class="panel-title">Comms</div><div class="panel-sub">12 unread · 3 priority · synced 5 min ago</div></div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">Priority Inbox</div>
+          <div class="email-row">
+            <div class="fdot" style="background:var(--rose);width:6px;height:6px;box-shadow:0 0 6px rgba(253,164,175,.6);margin-top:5px"></div>
+            <div style="flex:1">
+              <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:13px;font-weight:500">James Carter</span><span style="font-size:10px;color:var(--t3)">8:42 AM</span></div>
+              <div style="font-size:12px;color:var(--sky)">Q2 Investment Review — Action Required</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:2px;font-weight:300">Please review before Thursday's board call...</div>
+            </div>
+          </div>
+          <div class="email-row">
+            <div class="fdot" style="background:var(--rose);width:6px;height:6px;box-shadow:0 0 6px rgba(253,164,175,.6);margin-top:5px"></div>
+            <div style="flex:1">
+              <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:13px;font-weight:500">Sarah Kim</span><span style="font-size:10px;color:var(--t3)">7:15 AM</span></div>
+              <div style="font-size:12px;color:var(--sky)">Re: Product Roadmap — Feedback Needed</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:2px;font-weight:300">I've made edits to the doc. Can we sync today?</div>
+            </div>
+          </div>
+          <div class="email-row">
+            <div class="fdot" style="background:var(--amber);width:6px;height:6px;box-shadow:0 0 6px rgba(252,211,77,.5);margin-top:5px"></div>
+            <div style="flex:1">
+              <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:13px;font-weight:500">Marcus Osei</span><span style="font-size:10px;color:var(--t3)">Yesterday</span></div>
+              <div style="font-size:12px;color:var(--t2)">Contract renewal — let's discuss</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:2px;font-weight:300">Following up on last week's conversation...</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Upcoming</div>
+          <div class="cal-row next"><div class="cal-time">Today · 9:00 AM</div><div class="cal-name">Team Sync — Zoom</div><div class="cal-sub">45 min · 4 attendees</div></div>
+          <div class="cal-row"><div class="cal-time">Today · 2:00 PM</div><div class="cal-name">1:1 with Sarah Kim</div><div class="cal-sub">30 min · Product discussion</div></div>
+          <div class="cal-row"><div class="cal-time">Fri · 9:00 AM</div><div class="cal-name">Board Prep Call</div><div class="cal-sub">60 min · Finance review</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FINANCES ── -->
+    <div class="panel" id="panel-finances">
+      <div class="panel-header"><div class="panel-title">Finances</div><div class="panel-sub">All accounts synced · Updated today</div></div>
+      <div class="g3">
+        <div class="card glow-amber">
+          <div class="card-label">Net Worth</div>
+          <div class="fbig amber">$847,320</div>
+          <div class="card-sub emerald">↑ +$12,450 this month</div>
+          <div class="sparkline-wrap" style="margin-top:10px">
+            <svg width="100%" height="28" viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polygon points="0,28 0,24 20,22 40,23 60,18 80,15 100,11 120,8 120,28" fill="url(#sg-amber)"/>
+              <polyline points="0,24 20,22 40,23 60,18 80,15 100,11 120,8" stroke="#fcd34d" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Monthly Spend</div>
+          <div class="fbig" style="font-size:32px">$4,820</div>
+          <div class="card-sub amber">$380 under budget</div>
+          <div class="prog-track" style="margin-top:12px"><div class="prog-fill" style="width:76%;background:linear-gradient(90deg,var(--emerald),var(--amber))"></div></div>
+          <div style="font-size:10px;color:var(--t3);margin-top:5px">76% of $6,300 budget</div>
+        </div>
+        <div class="card glow-violet">
+          <div class="card-label">Investments</div>
+          <div class="fbig" style="font-size:32px">$423,100</div>
+          <div class="card-sub emerald">↑ +3.2% this month</div>
+          <div class="sparkline-wrap" style="margin-top:10px">
+            <svg width="100%" height="28" viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polygon points="0,28 0,20 20,22 40,18 60,20 80,15 100,12 120,9 120,28" fill="url(#sg-violet)"/>
+              <polyline points="0,20 20,22 40,18 60,20 80,15 100,12 120,9" stroke="#c4b5fd" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">Spending by Category</div>
+          <div style="margin-top:12px">
+            <div class="brow"><span class="blabel">Housing</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:55%;background:var(--sky)"></div></div><span class="bamount">$2,650</span></div>
+            <div class="brow"><span class="blabel">Food</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:22%;background:var(--emerald)"></div></div><span class="bamount">$820</span></div>
+            <div class="brow"><span class="blabel">Transport</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:10%;background:var(--violet)"></div></div><span class="bamount">$380</span></div>
+            <div class="brow"><span class="blabel">Health</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:9%;background:var(--amber)"></div></div><span class="bamount">$340</span></div>
+            <div class="brow"><span class="blabel">Subscriptions</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:7%;background:var(--rose)"></div></div><span class="bamount">$260</span></div>
+            <div class="brow"><span class="blabel">Other</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:5%;background:var(--t3)"></div></div><span class="bamount">$370</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Recent Transactions</div>
+          <div class="feed-row"><div class="fdot" style="background:var(--rose)"></div><div style="flex:1;display:flex;justify-content:space-between"><span class="ftxt">Whole Foods Market</span><span style="font-size:12px;color:var(--rose)">−$127</span></div></div>
+          <div class="feed-row"><div class="fdot" style="background:var(--emerald)"></div><div style="flex:1;display:flex;justify-content:space-between"><span class="ftxt">Dividend — VTSAX</span><span style="font-size:12px;color:var(--emerald)">+$340</span></div></div>
+          <div class="feed-row"><div class="fdot" style="background:var(--rose)"></div><div style="flex:1;display:flex;justify-content:space-between"><span class="ftxt">Apple One</span><span style="font-size:12px;color:var(--rose)">−$37</span></div></div>
+          <div class="feed-row"><div class="fdot" style="background:var(--rose)"></div><div style="flex:1;display:flex;justify-content:space-between"><span class="ftxt">Shell — Gas Station</span><span style="font-size:12px;color:var(--rose)">−$68</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HEALTH ── -->
+    <div class="panel" id="panel-health">
+      <div class="panel-header"><div class="panel-title">Health</div><div class="panel-sub">WHOOP integration · Placeholder data</div></div>
+      <div class="whoop-note">⚡ WHOOP not yet connected — connect in Settings</div>
+      <div class="g3">
+        <div class="card glow-emerald" style="text-align:center">
+          <div class="card-label">Recovery</div>
+          <div class="ring-wrap">
+            <svg width="110" height="110" viewBox="0 0 110 110"><circle cx="55" cy="55" r="46" stroke="rgba(110,231,183,0.1)" stroke-width="7" fill="none"/><circle cx="55" cy="55" r="46" stroke="#6ee7b7" stroke-width="7" fill="none" stroke-dasharray="289" stroke-dashoffset="46" stroke-linecap="round" style="filter:drop-shadow(0 0 10px rgba(110,231,183,.5));transition:stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1)"/></svg>
+            <div class="ring-num"><span class="rscore emerald">84</span><span class="rlabel">recovery</span></div>
+          </div>
+          <div style="font-size:11px;color:var(--emerald)">Good · Well Recovered</div>
+        </div>
+        <div class="card glow-sky" style="text-align:center">
+          <div class="card-label">Strain</div>
+          <div class="ring-wrap">
+            <svg width="110" height="110" viewBox="0 0 110 110"><circle cx="55" cy="55" r="46" stroke="rgba(147,197,253,0.1)" stroke-width="7" fill="none"/><circle cx="55" cy="55" r="46" stroke="#93c5fd" stroke-width="7" fill="none" stroke-dasharray="289" stroke-dashoffset="145" stroke-linecap="round" style="filter:drop-shadow(0 0 10px rgba(147,197,253,.5));transition:stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1)"/></svg>
+            <div class="ring-num"><span class="rscore sky">11.4</span><span class="rlabel">strain</span></div>
+          </div>
+          <div style="font-size:11px;color:var(--sky)">Moderate · On target</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Vitals</div>
+          <div class="hrow"><span class="hname">Resting HR</span><span class="hval emerald">52 <span style="font-size:10px;color:var(--t3)">bpm</span></span></div>
+          <div class="hrow"><span class="hname">HRV</span><span class="hval emerald">68 <span style="font-size:10px;color:var(--t3)">ms</span></span></div>
+          <div class="hrow"><span class="hname">Sleep</span><span class="hval">7h 22m</span></div>
+          <div class="hrow"><span class="hname">Sleep Performance</span><span class="hval sky">89<span style="font-size:10px;color:var(--t3)">%</span></span></div>
+          <div class="hrow"><span class="hname">SpO₂</span><span class="hval">98<span style="font-size:10px;color:var(--t3)">%</span></span></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">Sleep Stages</div>
+          <div style="margin-top:10px">
+            <div class="brow"><span class="blabel violet">REM</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:28%;background:var(--violet)"></div></div><span class="bamount">2h 04m</span></div>
+            <div class="brow"><span class="blabel sky">Deep</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:18%;background:var(--sky)"></div></div><span class="bamount">1h 20m</span></div>
+            <div class="brow"><span class="blabel" style="color:var(--t2)">Light</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:50%;background:var(--t3)"></div></div><span class="bamount">3h 42m</span></div>
+            <div class="brow"><span class="blabel rose">Awake</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:5%;background:var(--rose)"></div></div><span class="bamount">0h 16m</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Weekly Recovery</div>
+          <div style="display:flex;align-items:flex-end;gap:8px;height:80px;margin-top:14px;padding:0 2px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:100%;background:rgba(110,231,183,.3);border-radius:4px;height:60%;transition:height .8s ease"></div><span style="font-size:9px;color:var(--t3)">Mon</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:100%;background:rgba(110,231,183,.3);border-radius:4px;height:45%"></div><span style="font-size:9px;color:var(--t3)">Tue</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:100%;background:rgba(252,211,77,.35);border-radius:4px;height:35%"></div><span style="font-size:9px;color:var(--t3)">Wed</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:100%;background:rgba(110,231,183,.35);border-radius:4px;height:72%"></div><span style="font-size:9px;color:var(--t3)">Thu</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:100%;background:rgba(110,231,183,.12);border:1px solid var(--emerald);border-radius:4px;height:84%"></div><span style="font-size:9px;color:var(--emerald)">Today</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CALENDAR ── -->
+    <div class="panel" id="panel-calendar">
+      <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div><div class="panel-title" id="cal-full-title">April 2026</div><div class="panel-sub">Google Calendar · Placeholder data</div></div>
+        <div style="display:flex;gap:8px">
+          <div onclick="shiftMonth(-1)" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--t2);background:var(--surface);transition:all .18s" onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">← Prev</div>
+          <div onclick="shiftMonth(1)"  style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--t2);background:var(--surface);transition:all .18s" onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">Next →</div>
+        </div>
+      </div>
+      <div class="cal-full-grid" id="cal-full-dows" style="margin-bottom:6px"></div>
+      <div class="cal-full-grid" id="cal-full-grid"></div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="panel" id="panel-settings">
+      <div class="panel-header"><div class="panel-title">Settings</div><div class="panel-sub">Integrations &amp; configuration</div></div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">Integrations</div>
+          <div style="margin-top:6px">
+            <div class="hrow"><span class="hname">WHOOP Fitness Tracker</span><span style="font-size:11px;color:var(--amber)">Pending</span></div>
+            <div class="hrow"><span class="hname">Google Calendar</span><span style="font-size:11px;color:var(--t3)">Not connected</span></div>
+            <div class="hrow"><span class="hname">Gmail</span><span style="font-size:11px;color:var(--t3)">Not connected</span></div>
+            <div class="hrow"><span class="hname">Finance (Plaid)</span><span style="font-size:11px;color:var(--t3)">Not connected</span></div>
+            <div class="hrow"><span class="hname">Claude API</span><span style="font-size:11px;color:var(--emerald)">● Connected</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">About</div>
+          <div style="font-size:13px;color:var(--t2);line-height:2.2;margin-top:6px;font-weight:300">
+            <div>Version <span class="sky">2.0.0</span> · Draft</div>
+            <div>Built with <span class="violet">Claude Code</span></div>
+            <div>Stack: HTML · CSS · JS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const titles = { dashboard:'Dashboard', calendar:'Calendar', tasks:'Tasks', agents:'Agents', comms:'Comms', finances:'Finances', health:'Health', settings:'Settings' };
+
+  function sw(name, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+    document.getElementById('ptitle').textContent = titles[name] || name;
+    if (name === 'dashboard') animateDashboard();
+  }
+
+  // Clock
+  function tick() {
+    const n = new Date(), pad = x => String(x).padStart(2,'0');
+    const h = pad(n.getHours()), m = pad(n.getMinutes()), s = pad(n.getSeconds());
+    document.getElementById('tbclock').textContent = `${h}:${m}:${s}`;
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('tbdate').textContent = `${months[n.getMonth()].slice(0,3)} ${n.getDate()}, ${n.getFullYear()}`;
+  }
+
+  function toggleDashTask(el) {
+    el.classList.toggle('done');
+    el.querySelector('.tchk').textContent = el.classList.contains('done') ? '✓' : '';
+    const tasks = document.querySelectorAll('.dtask');
+    const done = document.querySelectorAll('.dtask.done').length;
+    const total = tasks.length;
+    const pct = Math.round((done / total) * 100);
+    const prog = document.getElementById('dash-task-prog');
+    const count = document.getElementById('dash-task-count');
+    if (prog) prog.style.width = pct + '%';
+    if (count) count.textContent = `${done} of ${total} done`;
+  }
+  tick(); setInterval(tick, 1000);
+
+  // Count-up animation
+  function countUp(el, target, duration, prefix, suffix, decimals) {
+    prefix = prefix || ''; suffix = suffix || ''; decimals = decimals || 0;
+    const start = performance.now();
+    function step(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const val = eased * target;
+      const display = decimals ? val.toFixed(decimals) : Math.round(val);
+      el.innerHTML = prefix + display + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function animateDashboard() {
+    setTimeout(() => {
+      const tasks = document.getElementById('stat-tasks');
+      const agents = document.getElementById('stat-agents');
+      const comms = document.getElementById('stat-comms');
+      const rec = document.getElementById('stat-rec');
+      const nw = document.getElementById('stat-nw');
+      const prog = document.getElementById('focus-prog');
+      const pct = document.getElementById('focus-pct');
+
+      if (tasks) countUp(tasks, 3, 800);
+      if (agents) countUp(agents, 5, 900);
+      if (comms) countUp(comms, 12, 700);
+      if (rec) {
+        // Recovery keeps suffix
+        const start = performance.now();
+        const dur = 1200;
+        function step(now) {
+          const p = Math.min((now - start) / dur, 1);
+          const e = 1 - Math.pow(1 - p, 3);
+          rec.innerHTML = Math.round(e * 84) + '<span style="font-size:22px;color:var(--t3)">%</span>';
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+      if (nw) {
+        const start = performance.now();
+        const dur = 1000;
+        function step(now) {
+          const p = Math.min((now - start) / dur, 1);
+          const e = 1 - Math.pow(1 - p, 3);
+          const val = Math.round(e * 847);
+          nw.textContent = '$' + val.toLocaleString() + 'k';
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+      if (prog) {
+        setTimeout(() => { prog.style.width = '15%'; }, 200);
+        setTimeout(() => { if (pct) pct.textContent = '15% complete'; }, 1400);
+      }
+    }, 100);
+  }
+
+  // ── TASKS ──
+  const priColors = { rose:'var(--rose)', amber:'var(--amber)', emerald:'var(--emerald)' };
+  const tagColors = { Work:'var(--sky)', Health:'var(--emerald)', Finance:'var(--amber)', Personal:'var(--violet)' };
+
+  let taskData = [
+    { text:'Review Q2 budget report',       tag:'Finance', pri:'rose',    done:true  },
+    { text:'Morning workout',               tag:'Health',  pri:'amber',   done:true  },
+    { text:'Check Sloane logs',             tag:'Work',    pri:'emerald', done:true  },
+    { text:'Respond to 3 priority emails',  tag:'Work',    pri:'rose',    done:false },
+    { text:'Finalize dashboard UI design',  tag:'Personal',pri:'rose',    done:false },
+    { text:'Connect WHOOP API',             tag:'Health',  pri:'amber',   done:false },
+    { text:'Review subscription expenses',  tag:'Finance', pri:'emerald', done:false },
+  ];
+  let selPriVal = 'rose', selTagVal = 'Work';
+
+  const gripSVG = `<svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>`;
+
+  let dragIdx = null;
+
+  function renderTasks() {
+    const wrap = document.getElementById('task-list-wrap');
+    if (!wrap) return;
+    wrap.innerHTML = taskData.map((t, i) => `
+      <div class="task-row${t.done?' done':''}" data-idx="${i}" draggable="true">
+        <div class="drag-handle">${gripSVG}</div>
+        <div class="tchk" onclick="toggleTask(${i})">${t.done?'✓':''}</div>
+        <div class="tpri" style="background:${priColors[t.pri]}"></div>
+        <span class="task-text" contenteditable="true"
+          onblur="saveTaskText(${i},this.textContent.trim())"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+          onclick="event.stopPropagation()">${t.text}</span>
+        <span class="ttag">${t.tag}</span>
+        <span class="task-del" onclick="event.stopPropagation();deleteTask(${i})">✕</span>
+      </div>`).join('');
+
+    // Drag-and-drop — per-row: only dragstart/dragend
+    wrap.querySelectorAll('.task-row').forEach(row => {
+      row.addEventListener('dragstart', e => {
+        dragIdx = +row.dataset.idx;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => row.style.opacity = '.4', 0);
+      });
+      row.addEventListener('dragend', () => {
+        row.style.opacity = '';
+        wrap.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      });
+    });
+
+    function nearestRow(y) {
+      const rows = [...wrap.querySelectorAll('.task-row')];
+      let best = null, bestDist = Infinity;
+      rows.forEach(r => {
+        const rect = r.getBoundingClientRect();
+        const dist = Math.abs(y - (rect.top + rect.height / 2));
+        if (dist < bestDist) { bestDist = dist; best = r; }
+      });
+      return best;
+    }
+
+    // Container handles dragover + drop — fires even in gaps between rows
+    wrap.ondragover = e => {
+      e.preventDefault();
+      wrap.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      const closest = nearestRow(e.clientY);
+      if (!closest) return;
+      const rect = closest.getBoundingClientRect();
+      closest.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
+    };
+
+    wrap.ondrop = e => {
+      e.preventDefault();
+      wrap.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      if (dragIdx === null) return;
+      const closest = nearestRow(e.clientY);
+      if (!closest) return;
+      const targetIdx = +closest.dataset.idx;
+      if (dragIdx === targetIdx) { dragIdx = null; return; }
+      const rect = closest.getBoundingClientRect();
+      const insertAfter = e.clientY >= rect.top + rect.height / 2;
+      const [moved] = taskData.splice(dragIdx, 1);
+      let insertAt = dragIdx < targetIdx ? targetIdx - 1 : targetIdx;
+      if (insertAfter) insertAt += 1;
+      taskData.splice(insertAt, 0, moved);
+      dragIdx = null;
+      renderTasks();
+    };
+
+    updateTaskStats();
+  }
+
+  function saveTaskText(i, text) { if (text) taskData[i].text = text; }
+
+  function updateTaskStats() {
+    const done = taskData.filter(t => t.done).length;
+    const total = taskData.length;
+    const pct = total ? Math.round((done/total)*100) : 0;
+    const now = new Date();
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    const sub = document.getElementById('tasks-sub');
+    if (sub) sub.textContent = `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()} · ${done} of ${total} complete`;
+    const prog = document.getElementById('tasks-prog');
+    if (prog) prog.style.width = pct + '%';
+    const pctLbl = document.getElementById('tasks-pct-label');
+    if (pctLbl) pctLbl.textContent = pct + '%';
+
+    // By category
+    const cats = ['Work','Health','Finance','Personal'];
+    const catEl = document.getElementById('cat-breakdown');
+    if (catEl) {
+      const max = Math.max(...cats.map(c => taskData.filter(t => t.tag===c).length), 1);
+      catEl.innerHTML = cats.map(c => {
+        const n = taskData.filter(t => t.tag===c).length;
+        const col = tagColors[c];
+        return `<div class="brow"><span class="blabel" style="color:${col}">${c}</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:${Math.round((n/max)*100)}%;background:${col};transition:width .6s ease"></div></div><span class="bamount">${n} task${n!==1?'s':''}</span></div>`;
+      }).join('');
+    }
+
+    // Sync dashboard task card
+    const dt = document.querySelectorAll('.dtask');
+    const dtDone = document.querySelectorAll('.dtask.done').length;
+    const dtTotal = dt.length;
+    const dProg = document.getElementById('dash-task-prog');
+    const dCount = document.getElementById('dash-task-count');
+    if (dProg) dProg.style.width = Math.round((dtDone/dtTotal)*100) + '%';
+    if (dCount) dCount.textContent = `${dtDone} of ${dtTotal} done`;
+
+    // Sync nav pill
+    const navPill = document.querySelector('.nav-item[onclick*="tasks"] .nav-pill');
+    if (navPill) navPill.textContent = total - done;
+  }
+
+  function toggleTask(i) { taskData[i].done = !taskData[i].done; renderTasks(); }
+  function deleteTask(i) { taskData.splice(i, 1); renderTasks(); }
+
+  function selPri(p) {
+    selPriVal = p;
+    document.querySelectorAll('.tpri-sel').forEach(el => el.classList.toggle('active-sel', el.dataset.pri === p));
+  }
+  function selTag(t) {
+    selTagVal = t;
+    document.querySelectorAll('.ttag-sel').forEach(el => el.classList.toggle('active-sel', el.dataset.tag === t));
+  }
+
+  function commitTask() {
+    const inp = document.getElementById('task-input');
+    if (!inp) return;
+    const text = inp.value.trim();
+    if (!text) return;
+    taskData.push({ text, tag: selTagVal, pri: selPriVal, done: false });
+    inp.value = '';
+    renderTasks();
+  }
+
+  renderTasks();
+
+  // ── CALENDAR ──
+  const calEvents = {
+    '2026-04-25': [{t:'All day',n:'Change TikTok username to @deepwatersci',c:'chip-amber'},{t:'All day',n:'Steve Royal',c:'chip-violet'}],
+    '2026-04-26': [{t:'3:00 PM',n:'Oasis Screening',c:'chip-sky'}],
+    '2026-05-01': [{t:'All day',n:'Check deepwaterlabs.com',c:'chip-emerald'}],
+    '2026-05-04': [{t:'All day',n:'Shoot at Alta',c:'chip-sky'}],
+    '2026-05-08': [{t:'All day',n:'Noah Hill Screening',c:'chip-violet'}],
+    '2026-05-09': [{t:'All day',n:'San Diego — Miles & Calvin',c:'chip-emerald'}],
+    '2026-05-29': [{t:'All day',n:'Declan Arrives',c:'chip-rose'}],
+  };
+
+  let calViewDate = new Date();
+
+  const CAL_COLORS = ['sky','violet','emerald','amber','rose'];
+  function renderComingUp() {
+    const wrap = document.getElementById('coming-up-list');
+    if (!wrap) return;
+    const now = new Date();
+    const todayKey = calKey(now.getFullYear(), now.getMonth(), now.getDate());
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    const upcoming = [];
+    Object.entries(calEvents)
+      .filter(([k]) => k >= todayKey)
+      .sort(([a],[b]) => a.localeCompare(b))
+      .forEach(([k, evs]) => evs.forEach(ev => upcoming.push({key:k,...ev})));
+
+    const next5 = upcoming.slice(0, 5);
+    if (!next5.length) { wrap.innerHTML = '<div style="font-size:12px;color:var(--t3)">No upcoming events</div>'; return; }
+
+    wrap.innerHTML = next5.map((ev, i) => {
+      const d = new Date(ev.key + 'T12:00:00');
+      const isToday = ev.key === todayKey;
+      const tomorrowKey = calKey(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const isTomorrow = ev.key === tomorrowKey;
+      const label = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}`;
+      const col = ev.c ? ev.c.replace('chip-','') : CAL_COLORS[i % CAL_COLORS.length];
+      return `<div class="upcoming-item ${col}">
+        <div class="upcoming-time ${col}">${label} · ${ev.t}</div>
+        <div class="upcoming-name">${ev.n}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function calKey(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+  function renderMiniCal() {
+    const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const el = document.getElementById('mini-cal');
+    const lbl = document.getElementById('mini-cal-month');
+    if (lbl) lbl.textContent = `${months[m]} ${y}`;
+    if (!el) return;
+    const first = new Date(y, m, 1).getDay();
+    const days = new Date(y, m+1, 0).getDate();
+    const dows = ['S','M','T','W','T','F','S'];
+    let html = '<div class="mini-cal-grid">';
+    dows.forEach(d => { html += `<div class="mini-cal-dow">${d}</div>`; });
+    for (let i = 0; i < first; i++) html += '<div class="mini-cal-day empty">·</div>';
+    for (let d = 1; d <= days; d++) {
+      const key = calKey(y, m, d);
+      const isToday = d === now.getDate();
+      const hasEv = calEvents[key];
+      if (isToday) html += `<div class="mini-cal-day today">${d}</div>`;
+      else html += `<div class="mini-cal-day${hasEv?' has-event':''}">${d}</div>`;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  function renderFullCal() {
+    const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const title = document.getElementById('cal-full-title');
+    if (title) title.textContent = `${months[m]} ${y}`;
+    const dowEl = document.getElementById('cal-full-dows');
+    const gridEl = document.getElementById('cal-full-grid');
+    if (!dowEl || !gridEl) return;
+    const dows = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    dowEl.innerHTML = dows.map(d => `<div class="cal-full-dow">${d.slice(0,3)}</div>`).join('');
+    const today = new Date(), first = new Date(y, m, 1).getDay(), days = new Date(y, m+1, 0).getDate();
+    let html = '';
+    for (let i = 0; i < first; i++) html += '<div class="cal-full-day empty"></div>';
+    for (let d = 1; d <= days; d++) {
+      const key = calKey(y, m, d);
+      const isToday = d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
+      const evs = calEvents[key] || [];
+      html += `<div class="cal-full-day${isToday?' today':''}">`;
+      html += `<div class="cal-full-daynum">${d}</div>`;
+      evs.forEach(e => { html += `<div class="cal-event-chip ${e.c}">${e.t} ${e.n}</div>`; });
+      html += '</div>';
+    }
+    gridEl.innerHTML = html;
+  }
+
+  function shiftMonth(dir) {
+    calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth() + dir, 1);
+    renderFullCal();
+  }
+
+  renderMiniCal();
+  renderFullCal();
+  renderComingUp();
+
+  // ── MARKETS ──
+  const mktSim = {
+    dow:  { val: 40312.45, chg:  0.24 },
+    ndx:  { val: 17891.32, chg:  0.18 },
+    spx:  { val:  5421.03, chg:  0.31 },
+    tny:  { val:     4.28, chg: -0.02 },
+    oil:  { val:    63.47, chg: -0.84 },
+    gas:  { val:     2.14, chg:  1.23 },
+    gld:  { val:  3312.50, chg:  0.47 },
+    vix:  { val:    22.31, chg: -3.10 }
+  };
+
+  function renderMkt(id, chgId, val, chg, isYield) {
+    const el = document.getElementById(id), ce = document.getElementById(chgId);
+    if (!el || !ce) return;
+    el.textContent = isYield ? val.toFixed(2) + '%' : val >= 1000 ? val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : val.toFixed(2);
+    const sign = chg >= 0 ? '+' : '';
+    ce.textContent = sign + chg.toFixed(2) + '%';
+    ce.className = 'mkt-chg ' + (chg >= 0 ? 'mkt-up' : 'mkt-dn');
+  }
+
+  function setMktStatus(live) {
+    const dot = document.getElementById('mkt-dot'), lbl = document.getElementById('mkt-lbl');
+    if (!dot || !lbl) return;
+    if (live) {
+      dot.style.background = 'var(--emerald)'; dot.style.boxShadow = '0 0 6px rgba(110,231,183,.8)';
+      lbl.textContent = 'Live'; lbl.style.color = 'var(--emerald)';
+    } else {
+      dot.style.background = 'var(--amber)'; dot.style.boxShadow = '0 0 6px rgba(252,211,77,.6)';
+      lbl.textContent = 'Simulated'; lbl.style.color = 'var(--amber)';
+    }
+  }
+
+  function applyMkt(data) {
+    renderMkt('mkt-dow','mkt-dow-chg', data.dow.val, data.dow.chg, false);
+    renderMkt('mkt-ndx','mkt-ndx-chg', data.ndx.val, data.ndx.chg, false);
+    renderMkt('mkt-spx','mkt-spx-chg', data.spx.val, data.spx.chg, false);
+    renderMkt('mkt-tny','mkt-tny-chg', data.tny.val, data.tny.chg, true);
+    renderMkt('mkt-oil','mkt-oil-chg', data.oil.val, data.oil.chg, false);
+    renderMkt('mkt-gas','mkt-gas-chg', data.gas.val, data.gas.chg, false);
+    renderMkt('mkt-gld','mkt-gld-chg', data.gld.val, data.gld.chg, false);
+    renderMkt('mkt-vix','mkt-vix-chg', data.vix.val, data.vix.chg, false);
+  }
+
+  async function fetchMarkets() {
+    try {
+      const symbols = '%5EDJI,%5EIXIC,%5EGSPC,%5ETNX,CL%3DF,NG%3DF,GC%3DF,%5EVIX';
+      const res = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error('bad status');
+      const json = await res.json();
+      const quotes = json.quoteResponse?.result;
+      if (!quotes || quotes.length < 4) throw new Error('no data');
+      const map = {};
+      quotes.forEach(q => { map[q.symbol] = q; });
+      const bind = (key, sym) => {
+        if (map[sym]) {
+          mktSim[key].val = map[sym].regularMarketPrice ?? mktSim[key].val;
+          mktSim[key].chg = map[sym].regularMarketChangePercent ?? mktSim[key].chg;
+        }
+      };
+      bind('dow','^DJI'); bind('ndx','^IXIC'); bind('spx','^GSPC'); bind('tny','^TNX');
+      bind('oil','CL=F'); bind('gas','NG=F'); bind('gld','GC=F'); bind('vix','^VIX');
+      applyMkt(mktSim);
+      setMktStatus(true);
+    } catch {
+      ['dow','ndx','spx','oil','gld'].forEach(k => { mktSim[k].val *= 1 + (Math.random() - 0.5) * 0.0002; });
+      mktSim.tny.val += (Math.random() - 0.5) * 0.002;
+      mktSim.gas.val += (Math.random() - 0.5) * 0.003;
+      mktSim.vix.val += (Math.random() - 0.5) * 0.05;
+      applyMkt(mktSim);
+      setMktStatus(false);
+    }
+  }
+
+  fetchMarkets();
+  setInterval(fetchMarkets, 60000);
+
+
+  // Init dashboard animations on load
+  animateDashboard();
+</script>
+</body>
+</html>
