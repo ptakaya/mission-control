@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Personal OS — v2</title>
+  <title>Mission Control</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#080809">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mission Control">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1000,7 +1005,7 @@
   const priColors = { rose:'var(--rose)', amber:'var(--amber)', emerald:'var(--emerald)' };
   const tagColors = { Work:'var(--sky)', Health:'var(--emerald)', Finance:'var(--amber)', Personal:'var(--violet)' };
 
-  let taskData = [
+  const DEFAULT_TASKS = [
     { text:'Review Q2 budget report',       tag:'Finance', pri:'rose',    done:true  },
     { text:'Morning workout',               tag:'Health',  pri:'amber',   done:true  },
     { text:'Check Sloane logs',             tag:'Work',    pri:'emerald', done:true  },
@@ -1009,6 +1014,8 @@
     { text:'Connect WHOOP API',             tag:'Health',  pri:'amber',   done:false },
     { text:'Review subscription expenses',  tag:'Finance', pri:'emerald', done:false },
   ];
+  let taskData = JSON.parse(localStorage.getItem('mc_tasks') || 'null') || DEFAULT_TASKS;
+  function saveTasks() { try { localStorage.setItem('mc_tasks', JSON.stringify(taskData)); } catch(e){} }
   let selPriVal = 'rose', selTagVal = 'Work';
 
   const gripSVG = `<svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>`;
@@ -1080,13 +1087,14 @@
       if (insertAfter) insertAt += 1;
       taskData.splice(insertAt, 0, moved);
       dragIdx = null;
+      saveTasks();
       renderTasks();
     };
 
     updateTaskStats();
   }
 
-  function saveTaskText(i, text) { if (text) taskData[i].text = text; }
+  function saveTaskText(i, text) { if (text) { taskData[i].text = text; saveTasks(); } }
 
   function updateTaskStats() {
     const done = taskData.filter(t => t.done).length;
@@ -1129,8 +1137,8 @@
     if (navPill) navPill.textContent = total - done;
   }
 
-  function toggleTask(i) { taskData[i].done = !taskData[i].done; renderTasks(); }
-  function deleteTask(i) { taskData.splice(i, 1); renderTasks(); }
+  function toggleTask(i) { taskData[i].done = !taskData[i].done; saveTasks(); renderTasks(); }
+  function deleteTask(i) { taskData.splice(i, 1); saveTasks(); renderTasks(); }
 
   function selPri(p) {
     selPriVal = p;
@@ -1148,6 +1156,7 @@
     if (!text) return;
     taskData.push({ text, tag: selTagVal, pri: selPriVal, done: false });
     inp.value = '';
+    saveTasks();
     renderTasks();
   }
 
@@ -1338,6 +1347,21 @@
 
   // Init dashboard animations on load
   animateDashboard();
+
+  // ── PRIORITY BAR persistence ──
+  const priInput = document.querySelector('.tb-priority-input');
+  if (priInput) {
+    const saved = localStorage.getItem('mc_priority');
+    if (saved) priInput.textContent = saved;
+    priInput.addEventListener('input', () => {
+      try { localStorage.setItem('mc_priority', priInput.textContent); } catch(e) {}
+    });
+  }
+
+  // ── SERVICE WORKER ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
 </script>
 </body>
 </html>
