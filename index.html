@@ -459,15 +459,7 @@
           <div class="prog-track" style="margin-bottom:14px">
             <div class="prog-fill" id="dash-task-prog" style="width:43%;background:linear-gradient(90deg,var(--sky),var(--violet));transition:width .6s ease"></div>
           </div>
-          <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px">
-            <div class="dtask done" onclick="toggleDashTask(this)"><div class="tchk">✓</div><div class="tpri" style="background:var(--rose)"></div><span class="task-text" style="font-size:12px">Review Q2 budget report</span><span class="ttag">Finance</span></div>
-            <div class="dtask done" onclick="toggleDashTask(this)"><div class="tchk">✓</div><div class="tpri" style="background:var(--amber)"></div><span class="task-text" style="font-size:12px">Morning workout</span><span class="ttag">Health</span></div>
-            <div class="dtask done" onclick="toggleDashTask(this)"><div class="tchk">✓</div><div class="tpri" style="background:var(--emerald)"></div><span class="task-text" style="font-size:12px">Check agent Scout logs</span><span class="ttag">Work</span></div>
-            <div class="dtask" onclick="toggleDashTask(this)"><div class="tchk"></div><div class="tpri" style="background:var(--rose)"></div><span class="task-text" style="font-size:12px">Respond to 3 priority emails</span><span class="ttag">Work</span></div>
-            <div class="dtask" onclick="toggleDashTask(this)"><div class="tchk"></div><div class="tpri" style="background:var(--rose)"></div><span class="task-text" style="font-size:12px">Finalize dashboard UI design</span><span class="ttag">Personal</span></div>
-            <div class="dtask" onclick="toggleDashTask(this)"><div class="tchk"></div><div class="tpri" style="background:var(--amber)"></div><span class="task-text" style="font-size:12px">Connect WHOOP API</span><span class="ttag">Health</span></div>
-            <div class="dtask" onclick="toggleDashTask(this)"><div class="tchk"></div><div class="tpri" style="background:var(--emerald)"></div><span class="task-text" style="font-size:12px">Review subscription expenses</span><span class="ttag">Finance</span></div>
-          </div>
+          <div id="dash-task-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px"></div>
         </div>
 
         <!-- Active Focus -->
@@ -927,13 +919,26 @@
     document.getElementById('tbdate').textContent = `${months[n.getMonth()].slice(0,3)} ${n.getDate()}, ${n.getFullYear()}`;
   }
 
-  function toggleDashTask(el) {
-    el.classList.toggle('done');
-    el.querySelector('.tchk').textContent = el.classList.contains('done') ? '✓' : '';
-    const tasks = document.querySelectorAll('.dtask');
-    const done = document.querySelectorAll('.dtask.done').length;
-    const total = tasks.length;
-    const pct = Math.round((done / total) * 100);
+  function toggleDashTask(i) {
+    taskData[i].done = !taskData[i].done;
+    saveTasks();
+    renderDashTasks();
+    updateTaskStats();
+  }
+
+  function renderDashTasks() {
+    const wrap = document.getElementById('dash-task-list');
+    if (!wrap) return;
+    wrap.innerHTML = taskData.map((t, i) => `
+      <div class="dtask${t.done?' done':''}" onclick="toggleDashTask(${i})">
+        <div class="tchk">${t.done?'✓':''}</div>
+        <div class="tpri" style="background:${priColors[t.pri]}"></div>
+        <span class="task-text" style="font-size:12px">${t.text}</span>
+        <span class="ttag">${t.tag}</span>
+      </div>`).join('');
+    const done = taskData.filter(t => t.done).length;
+    const total = taskData.length;
+    const pct = total ? Math.round((done/total)*100) : 0;
     const prog = document.getElementById('dash-task-prog');
     const count = document.getElementById('dash-task-count');
     if (prog) prog.style.width = pct + '%';
@@ -1092,6 +1097,7 @@
     };
 
     updateTaskStats();
+    renderDashTasks();
   }
 
   function saveTaskText(i, text) { if (text) { taskData[i].text = text; saveTasks(); } }
@@ -1161,6 +1167,7 @@
   }
 
   renderTasks();
+  renderDashTasks();
 
   // ── CALENDAR ──
   const calEvents = {
