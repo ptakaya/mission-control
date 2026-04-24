@@ -628,10 +628,18 @@
               + Add Task
             </div>
           </div>
-          <!-- By Category -->
+          <!-- Backlog -->
           <div class="card">
-            <div class="card-label">By Category</div>
-            <div style="margin-top:10px" id="cat-breakdown"></div>
+            <div class="card-label" style="margin-bottom:10px">Backlog · Ideas</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <input id="backlog-input" type="text" placeholder="Capture an idea..."
+                style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--t1);font-family:var(--ui);outline:none;transition:border-color .18s"
+                onfocus="this.style.borderColor='var(--border-hi)'" onblur="this.style.borderColor='var(--border)'"
+                onkeydown="if(event.key==='Enter')addBacklog()">
+              <div onclick="addBacklog()" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--t2);cursor:pointer;transition:all .18s;white-space:nowrap"
+                onmouseover="this.style.borderColor='var(--border-hi)';this.style.color='var(--t1)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">+ Add</div>
+            </div>
+            <div id="backlog-list" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto"></div>
           </div>
         </div>
       </div>
@@ -1117,17 +1125,6 @@
     const pctLbl = document.getElementById('tasks-pct-label');
     if (pctLbl) pctLbl.textContent = pct + '%';
 
-    // By category
-    const cats = ['Work','Health','Finance','Personal'];
-    const catEl = document.getElementById('cat-breakdown');
-    if (catEl) {
-      const max = Math.max(...cats.map(c => taskData.filter(t => t.tag===c).length), 1);
-      catEl.innerHTML = cats.map(c => {
-        const n = taskData.filter(t => t.tag===c).length;
-        const col = tagColors[c];
-        return `<div class="brow"><span class="blabel" style="color:${col}">${c}</span><div class="prog-track" style="flex:1"><div class="prog-fill" style="width:${Math.round((n/max)*100)}%;background:${col};transition:width .6s ease"></div></div><span class="bamount">${n} task${n!==1?'s':''}</span></div>`;
-      }).join('');
-    }
 
     // Sync dashboard task card
     const dt = document.querySelectorAll('.dtask');
@@ -1168,6 +1165,46 @@
 
   renderTasks();
   renderDashTasks();
+
+  // ── BACKLOG ──
+  let backlogData = JSON.parse(localStorage.getItem('mc_backlog') || '[]');
+  function saveBacklog() { try { localStorage.setItem('mc_backlog', JSON.stringify(backlogData)); } catch(e){} }
+
+  function renderBacklog() {
+    const wrap = document.getElementById('backlog-list');
+    if (!wrap) return;
+    if (!backlogData.length) {
+      wrap.innerHTML = '<div style="font-size:11px;color:var(--t3);padding:4px 0">Nothing here yet — capture your first idea above.</div>';
+      return;
+    }
+    wrap.innerHTML = backlogData.map((item, i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);transition:border-color .18s"
+        onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:5px;height:5px;border-radius:50%;background:var(--violet);flex-shrink:0"></div>
+        <span style="flex:1;font-size:12px;color:var(--t2)">${item}</span>
+        <span onclick="deleteBacklog(${i})" style="font-size:11px;color:var(--t3);cursor:pointer;padding:0 2px;transition:color .15s"
+          onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--t3)'">✕</span>
+      </div>`).join('');
+  }
+
+  function addBacklog() {
+    const inp = document.getElementById('backlog-input');
+    if (!inp) return;
+    const text = inp.value.trim();
+    if (!text) return;
+    backlogData.unshift(text);
+    saveBacklog();
+    inp.value = '';
+    renderBacklog();
+  }
+
+  function deleteBacklog(i) {
+    backlogData.splice(i, 1);
+    saveBacklog();
+    renderBacklog();
+  }
+
+  renderBacklog();
 
   // ── CALENDAR ──
   const calEvents = {
