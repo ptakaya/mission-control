@@ -24,6 +24,9 @@
       --emerald: #6ee7b7;
       --amber: #fcd34d;
       --rose: #fda4af;
+      --pri-hi:  #ef4444;
+      --pri-med: #eab308;
+      --pri-lo:  #22c55e;
       --t1: #f1f5f9; --t2: #94a3b8; --t3: #475569;
       --ui: 'Inter', sans-serif;
       --side: 200px;
@@ -604,28 +607,19 @@
         <div>
           <!-- Add Task -->
           <div class="card" style="margin-bottom:12px">
-            <div class="card-label">Add Task</div>
+            <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:8px">
+              <div onclick="commitTask()" style="font-size:11px;font-weight:500;color:var(--t3);cursor:pointer;padding:2px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);transition:all .18s;letter-spacing:.02em"
+                onmouseover="this.style.borderColor='var(--border-hi)';this.style.color='var(--t1)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t3)'">+ Add Task</div>
+            </div>
             <input id="task-input" type="text" placeholder="What needs to get done?" autocomplete="off"
               style="width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--t1);font-family:var(--ui);outline:none;margin-top:6px;transition:border-color .18s"
               onfocus="this.style.borderColor='var(--border-hi)'" onblur="this.style.borderColor='var(--border)'"
               onkeydown="if(event.key==='Enter')commitTask()">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-              <div style="display:flex;gap:6px;align-items:center">
-                <span style="font-size:10px;color:var(--t3);margin-right:2px">Priority</span>
-                <div class="tpri-sel active-sel" data-pri="rose"   style="background:var(--rose)"   onclick="selPri('rose')"   title="High"></div>
-                <div class="tpri-sel"             data-pri="amber"  style="background:var(--amber)"  onclick="selPri('amber')"  title="Medium"></div>
-                <div class="tpri-sel"             data-pri="emerald"style="background:var(--emerald)"onclick="selPri('emerald')"title="Low"></div>
-              </div>
-              <div style="display:flex;gap:5px">
-                <div class="ttag-sel active-sel" data-tag="Work"    onclick="selTag('Work')">Work</div>
-                <div class="ttag-sel"            data-tag="Health"  onclick="selTag('Health')">Health</div>
-                <div class="ttag-sel"            data-tag="Finance" onclick="selTag('Finance')">Finance</div>
-                <div class="ttag-sel"            data-tag="Personal"onclick="selTag('Personal')">Personal</div>
-              </div>
-            </div>
-            <div onclick="commitTask()" style="margin-top:10px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--t2);text-align:center;cursor:pointer;transition:all .18s"
-              onmouseover="this.style.borderColor='var(--border-hi)';this.style.color='var(--t1)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">
-              + Add Task
+            <div style="display:flex;align-items:center;margin-top:10px;gap:6px">
+              <span style="font-size:10px;color:var(--t3);margin-right:2px">Priority</span>
+              <div class="tpri-sel active-sel" data-pri="rose"    style="background:var(--pri-hi)"  onclick="selPri('rose')"    title="High"></div>
+              <div class="tpri-sel"            data-pri="amber"   style="background:var(--pri-med)" onclick="selPri('amber')"   title="Medium"></div>
+              <div class="tpri-sel"            data-pri="emerald" style="background:var(--pri-lo)"  onclick="selPri('emerald')" title="Low"></div>
             </div>
           </div>
           <!-- Backlog -->
@@ -1015,7 +1009,7 @@
   }
 
   // ── TASKS ──
-  const priColors = { rose:'var(--rose)', amber:'var(--amber)', emerald:'var(--emerald)' };
+  const priColors = { rose:'var(--pri-hi)', amber:'var(--pri-med)', emerald:'var(--pri-lo)' };
   const tagColors = { Work:'var(--sky)', Health:'var(--emerald)', Finance:'var(--amber)', Personal:'var(--violet)' };
 
   const DEFAULT_TASKS = [
@@ -1146,6 +1140,8 @@
   function selPri(p) {
     selPriVal = p;
     document.querySelectorAll('.tpri-sel').forEach(el => el.classList.toggle('active-sel', el.dataset.pri === p));
+    const inp = document.getElementById('task-input');
+    if (inp) inp.style.borderColor = priColors[p];
   }
   function selTag(t) {
     selTagVal = t;
@@ -1159,6 +1155,7 @@
     if (!text) return;
     taskData.push({ text, tag: selTagVal, pri: selPriVal, done: false });
     inp.value = '';
+    inp.style.borderColor = 'var(--border)';
     saveTasks();
     renderTasks();
   }
