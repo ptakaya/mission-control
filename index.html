@@ -219,6 +219,9 @@
     /* Drag-over indicator */
     .task-row.drag-over-top    { border-top:2px solid var(--violet); margin-top:-1px; }
     .task-row.drag-over-bottom { border-bottom:2px solid var(--violet); }
+    .backlog-row:hover .drag-handle { opacity:1; }
+    .backlog-row.drag-over-top    { border-top:2px solid var(--violet) !important; margin-top:-1px; }
+    .backlog-row.drag-over-bottom { border-bottom:2px solid var(--violet) !important; }
 
     /* ── AGENTS ── */
     .agent-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
@@ -1028,6 +1031,7 @@
   const gripSVG = `<svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>`;
 
   let dragIdx = null;
+  let dragBacklogIdx = null;
 
   function renderTasks() {
     const wrap = document.getElementById('task-list-wrap');
@@ -1171,17 +1175,70 @@
     const wrap = document.getElementById('backlog-list');
     if (!wrap) return;
     if (!backlogData.length) {
-      wrap.innerHTML = '<div style="font-size:11px;color:var(--t3);padding:4px 0">Nothing here yet — capture your first idea above.</div>';
+      wrap.innerHTML = '<div style="font-size:11px;color:var(--t3);padding:4px 0">Nothing here yet -- capture your first task above.</div>';
       return;
     }
     wrap.innerHTML = backlogData.map((item, i) => `
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);transition:border-color .18s"
+      <div class="backlog-row" data-idx="${i}" draggable="true"
+        style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);transition:border-color .18s"
         onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div class="drag-handle">${gripSVG}</div>
         <div style="width:5px;height:5px;border-radius:50%;background:var(--violet);flex-shrink:0"></div>
         <span style="flex:1;font-size:12px;color:var(--t2)">${item}</span>
         <span onclick="deleteBacklog(${i})" style="font-size:11px;color:var(--t3);cursor:pointer;padding:0 2px;transition:color .15s"
           onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--t3)'">✕</span>
       </div>`).join('');
+
+    function nearestBacklogRow(y) {
+      const rows = [...wrap.querySelectorAll('.backlog-row')];
+      let best = null, bestDist = Infinity;
+      rows.forEach(r => {
+        const rect = r.getBoundingClientRect();
+        const dist = Math.abs(y - (rect.top + rect.height / 2));
+        if (dist < bestDist) { bestDist = dist; best = r; }
+      });
+      return best;
+    }
+
+    wrap.querySelectorAll('.backlog-row').forEach(row => {
+      row.addEventListener('dragstart', e => {
+        dragBacklogIdx = +row.dataset.idx;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => row.style.opacity = '.4', 0);
+      });
+      row.addEventListener('dragend', () => {
+        row.style.opacity = '';
+        wrap.querySelectorAll('.backlog-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      });
+    });
+
+    wrap.ondragover = e => {
+      e.preventDefault();
+      wrap.querySelectorAll('.backlog-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      const closest = nearestBacklogRow(e.clientY);
+      if (!closest) return;
+      const rect = closest.getBoundingClientRect();
+      closest.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
+    };
+
+    wrap.ondrop = e => {
+      e.preventDefault();
+      wrap.querySelectorAll('.backlog-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      if (dragBacklogIdx === null) return;
+      const closest = nearestBacklogRow(e.clientY);
+      if (!closest) return;
+      const targetIdx = +closest.dataset.idx;
+      if (dragBacklogIdx === targetIdx) { dragBacklogIdx = null; return; }
+      const rect = closest.getBoundingClientRect();
+      const insertAfter = e.clientY >= rect.top + rect.height / 2;
+      const [moved] = backlogData.splice(dragBacklogIdx, 1);
+      let insertAt = dragBacklogIdx < targetIdx ? targetIdx - 1 : targetIdx;
+      if (insertAfter) insertAt += 1;
+      backlogData.splice(insertAt, 0, moved);
+      dragBacklogIdx = null;
+      saveBacklog();
+      renderBacklog();
+    };
   }
 
   function addBacklog() {
