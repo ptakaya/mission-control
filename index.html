@@ -595,12 +595,10 @@
             <div class="mkt-row"><span class="mkt-name">DOW</span><span class="mkt-val" id="mkt-dow">—</span><span class="mkt-chg" id="mkt-dow-chg">—</span></div>
             <div class="mkt-row"><span class="mkt-name">NASDAQ</span><span class="mkt-val" id="mkt-ndx">—</span><span class="mkt-chg" id="mkt-ndx-chg">—</span></div>
             <div class="mkt-row"><span class="mkt-name">S&amp;P 500</span><span class="mkt-val" id="mkt-spx">—</span><span class="mkt-chg" id="mkt-spx-chg">—</span></div>
-            <div class="mkt-row"><span class="mkt-name">10Y Yield</span><span class="mkt-val" id="mkt-tny">—</span><span class="mkt-chg" id="mkt-tny-chg">—</span></div>
             <div class="mkt-divider"></div>
             <div class="mkt-row"><span class="mkt-name">WTI Crude</span><span class="mkt-val" id="mkt-oil">—</span><span class="mkt-chg" id="mkt-oil-chg">—</span></div>
             <div class="mkt-row"><span class="mkt-name">Nat Gas</span><span class="mkt-val" id="mkt-gas">—</span><span class="mkt-chg" id="mkt-gas-chg">—</span></div>
             <div class="mkt-row"><span class="mkt-name">Gold</span><span class="mkt-val" id="mkt-gld">—</span><span class="mkt-chg" id="mkt-gld-chg">—</span></div>
-            <div class="mkt-row"><span class="mkt-name">VIX</span><span class="mkt-val" id="mkt-vix">—</span><span class="mkt-chg" id="mkt-vix-chg">—</span></div>
           </div>
         </div>
 
@@ -1405,17 +1403,15 @@
     dow:  { val: 40312.45, chg:  0.24 },
     ndx:  { val: 17891.32, chg:  0.18 },
     spx:  { val:  5421.03, chg:  0.31 },
-    tny:  { val:     4.28, chg: -0.02 },
     oil:  { val:    63.47, chg: -0.84 },
     gas:  { val:     2.14, chg:  1.23 },
     gld:  { val:  3312.50, chg:  0.47 },
-    vix:  { val:    22.31, chg: -3.10 }
   };
 
-  function renderMkt(id, chgId, val, chg, isYield) {
+  function renderMkt(id, chgId, val, chg) {
     const el = document.getElementById(id), ce = document.getElementById(chgId);
     if (!el || !ce) return;
-    el.textContent = isYield ? val.toFixed(2) + '%' : val >= 1000 ? val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : val.toFixed(2);
+    el.textContent = val >= 1000 ? val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : val.toFixed(2);
     const sign = chg >= 0 ? '+' : '';
     ce.textContent = sign + chg.toFixed(2) + '%';
     ce.className = 'mkt-chg ' + (chg >= 0 ? 'mkt-up' : 'mkt-dn');
@@ -1429,45 +1425,35 @@
       lbl.textContent = 'Live'; lbl.style.color = 'var(--emerald)';
     } else {
       dot.style.background = 'var(--amber)'; dot.style.boxShadow = '0 0 6px rgba(252,211,77,.6)';
-      lbl.textContent = 'Simulated'; lbl.style.color = 'var(--amber)';
+      lbl.textContent = 'Delayed'; lbl.style.color = 'var(--amber)';
     }
   }
 
   function applyMkt(data) {
-    renderMkt('mkt-dow','mkt-dow-chg', data.dow.val, data.dow.chg, false);
-    renderMkt('mkt-ndx','mkt-ndx-chg', data.ndx.val, data.ndx.chg, false);
-    renderMkt('mkt-spx','mkt-spx-chg', data.spx.val, data.spx.chg, false);
-    renderMkt('mkt-tny','mkt-tny-chg', data.tny.val, data.tny.chg, true);
-    renderMkt('mkt-oil','mkt-oil-chg', data.oil.val, data.oil.chg, false);
-    renderMkt('mkt-gas','mkt-gas-chg', data.gas.val, data.gas.chg, false);
-    renderMkt('mkt-gld','mkt-gld-chg', data.gld.val, data.gld.chg, false);
-    renderMkt('mkt-vix','mkt-vix-chg', data.vix.val, data.vix.chg, false);
+    renderMkt('mkt-dow','mkt-dow-chg', data.dow.val, data.dow.chg);
+    renderMkt('mkt-ndx','mkt-ndx-chg', data.ndx.val, data.ndx.chg);
+    renderMkt('mkt-spx','mkt-spx-chg', data.spx.val, data.spx.chg);
+    renderMkt('mkt-oil','mkt-oil-chg', data.oil.val, data.oil.chg);
+    renderMkt('mkt-gas','mkt-gas-chg', data.gas.val, data.gas.chg);
+    renderMkt('mkt-gld','mkt-gld-chg', data.gld.val, data.gld.chg);
   }
 
   async function fetchMarkets() {
     try {
-      const res = await fetch('/api/markets', { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) throw new Error('bad status');
+      const res = await fetch('/api/markets', { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) throw new Error('proxy error');
       const json = await res.json();
-      const quotes = json.quoteResponse?.result;
-      if (!quotes || quotes.length < 4) throw new Error('no data');
-      const map = {};
-      quotes.forEach(q => { map[q.symbol] = q; });
-      const bind = (key, sym) => {
-        if (map[sym]) {
-          mktSim[key].val = map[sym].regularMarketPrice ?? mktSim[key].val;
-          mktSim[key].chg = map[sym].regularMarketChangePercent ?? mktSim[key].chg;
+      if (!json.ok || !json.data) throw new Error('no data');
+      const d = json.data;
+      ['dow','ndx','spx','oil','gas','gld'].forEach(k => {
+        if (d[k]) {
+          mktSim[k].val = d[k].price;
+          mktSim[k].chg = d[k].open ? ((d[k].price - d[k].open) / d[k].open * 100) : mktSim[k].chg;
         }
-      };
-      bind('dow','^DJI'); bind('ndx','^IXIC'); bind('spx','^GSPC'); bind('tny','^TNX');
-      bind('oil','CL=F'); bind('gas','NG=F'); bind('gld','GC=F'); bind('vix','^VIX');
+      });
       applyMkt(mktSim);
       setMktStatus(true);
     } catch {
-      ['dow','ndx','spx','oil','gld'].forEach(k => { mktSim[k].val *= 1 + (Math.random() - 0.5) * 0.0002; });
-      mktSim.tny.val += (Math.random() - 0.5) * 0.002;
-      mktSim.gas.val += (Math.random() - 0.5) * 0.003;
-      mktSim.vix.val += (Math.random() - 0.5) * 0.05;
       applyMkt(mktSim);
       setMktStatus(false);
     }
