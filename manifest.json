@@ -6,12 +6,11 @@
   "display": "standalone",
   "background_color": "#080809",
   "theme_color": "#080809",
-  "orientation": "landscape-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23080809'/><circle cx='256' cy='256' r='160' fill='none' stroke='%2393c5fd' stroke-width='12' opacity='.6'/><circle cx='256' cy='256' r='80' fill='none' stroke='%23c4b5fd' stroke-width='8' opacity='.8'/><circle cx='256' cy='256' r='16' fill='%236ee7b7'/></svg>",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
