@@ -891,7 +891,7 @@
     <!-- ── CALENDAR ── -->
     <div class="panel" id="panel-calendar">
       <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between">
-        <div><div class="panel-title" id="cal-full-title">April 2026</div><div class="panel-sub">Google Calendar · Placeholder data</div></div>
+        <div><div class="panel-title" id="cal-full-title">April 2026</div><div class="panel-sub">Google Calendar · <span id="cal-sync-lbl">Loading…</span></div></div>
         <div style="display:flex;gap:8px">
           <div onclick="shiftMonth(-1)" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--t2);background:var(--surface);transition:all .18s" onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">← Prev</div>
           <div onclick="shiftMonth(1)"  style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--t2);background:var(--surface);transition:all .18s" onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">Next →</div>
@@ -909,7 +909,7 @@
           <div class="card-label">Integrations</div>
           <div style="margin-top:6px">
             <div class="hrow"><span class="hname">WHOOP Fitness Tracker</span><span style="font-size:11px;color:var(--amber)">Pending</span></div>
-            <div class="hrow"><span class="hname">Google Calendar</span><span style="font-size:11px;color:var(--t3)">Not connected</span></div>
+            <div class="hrow"><span class="hname">Google Calendar</span><span style="font-size:11px;color:var(--emerald)">● Synced via Sloane</span></div>
             <div class="hrow"><span class="hname">Gmail</span><span style="font-size:11px;color:var(--t3)">Not connected</span></div>
             <div class="hrow"><span class="hname">Finance (Plaid)</span><span style="font-size:11px;color:var(--t3)">Not connected</span></div>
             <div class="hrow"><span class="hname">Claude API</span><span style="font-size:11px;color:var(--emerald)">● Connected</span></div>
@@ -1454,8 +1454,7 @@
 
   async function fetchMarkets() {
     try {
-      const symbols = '%5EDJI,%5EIXIC,%5EGSPC,%5ETNX,CL%3DF,NG%3DF,GC%3DF,%5EVIX';
-      const res = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`, { signal: AbortSignal.timeout(5000) });
+      const res = await fetch('/api/markets', { signal: AbortSignal.timeout(8000) });
       if (!res.ok) throw new Error('bad status');
       const json = await res.json();
       const quotes = json.quoteResponse?.result;
@@ -1534,6 +1533,21 @@
           try { localStorage.setItem('mc_backlog', JSON.stringify(backlogData)); } catch(e){}
           renderBacklog(); changed = true;
         }
+        if (d.calendar) {
+          try {
+            const evs = JSON.parse(d.calendar);
+            Object.keys(calEvents).forEach(k => delete calEvents[k]);
+            evs.forEach(ev => {
+              if (!calEvents[ev.date]) calEvents[ev.date] = [];
+              calEvents[ev.date].push({ t: ev.time, n: ev.title, c: 'chip-' + (ev.color || 'sky') });
+            });
+            renderMiniCal(); renderFullCal(); renderComingUp();
+            const lbl = document.getElementById('cal-sync-lbl');
+            if (lbl && d.calSyncedAt) lbl.textContent = 'Synced ' + new Date(d.calSyncedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+            else if (lbl) lbl.textContent = 'Synced via Sloane';
+            changed = true;
+          } catch(e) { console.warn('[MC] Calendar parse error:', e.message); }
+        }
         if (changed) console.log('[MC] Loaded from Firestore');
       }).catch(e => console.warn('[MC] Firestore load failed (localStorage active):', e.message));
 
@@ -1550,6 +1564,17 @@
           backlogData.length = 0; d.backlog.forEach(b => backlogData.push(b));
           try { localStorage.setItem('mc_backlog', JSON.stringify(backlogData)); } catch(e){}
           renderBacklog();
+        }
+        if (d.calendar) {
+          try {
+            const evs = JSON.parse(d.calendar);
+            Object.keys(calEvents).forEach(k => delete calEvents[k]);
+            evs.forEach(ev => {
+              if (!calEvents[ev.date]) calEvents[ev.date] = [];
+              calEvents[ev.date].push({ t: ev.time, n: ev.title, c: 'chip-' + (ev.color || 'sky') });
+            });
+            renderMiniCal(); renderFullCal(); renderComingUp();
+          } catch(e) {}
         }
       }, e => console.warn('[MC] Firestore listener error:', e.message));
 
