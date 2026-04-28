@@ -101,6 +101,26 @@
       content: attr(data-placeholder); color:var(--t3); pointer-events:none;
     }
 
+    /* ── MOBILE / PORTRAIT ── */
+    .mob-hamburger {
+      display:none; background:none; border:none; cursor:pointer;
+      color:var(--t2); padding:4px; flex-shrink:0; align-items:center;
+    }
+    .mob-hamburger svg { width:20px; height:20px; }
+    .mob-overlay {
+      display:none; position:fixed; inset:0; z-index:99;
+      background:rgba(0,0,0,0.55); backdrop-filter:blur(2px);
+    }
+    .mob-overlay.visible { display:block; }
+    @media (max-width: 640px) {
+      .mob-hamburger { display:flex; }
+      .sidebar {
+        position:fixed; left:-220px; top:0; bottom:0;
+        z-index:100; transition:left .25s cubic-bezier(.25,.46,.45,.94);
+      }
+      .sidebar.mob-open { left:0; }
+    }
+
     /* ── PANELS ── */
     .panel { display:none; flex:1; overflow-y:auto; padding:20px 24px; }
     .panel.active { display:block; animation:panelIn .28s cubic-bezier(.25,.46,.45,.94); }
@@ -394,6 +414,7 @@
   </defs>
 </svg>
 
+<div class="mob-overlay" onclick="closeSidebar()"></div>
 <div class="app">
 
   <!-- SIDEBAR -->
@@ -450,6 +471,9 @@
 
   <main class="workspace">
     <div class="topbar">
+      <button class="mob-hamburger" onclick="openSidebar()" aria-label="Menu">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
       <span class="tb-priority-label">Today's Priority</span>
       <div class="tb-sep"></div>
       <div class="tb-priority-input" contenteditable="true" data-placeholder="What's the one thing that needs to get done today?"></div>
@@ -915,6 +939,16 @@
     el.classList.add('active');
     document.getElementById('ptitle').textContent = titles[name] || name;
     if (name === 'dashboard') animateDashboard();
+    closeSidebar();
+  }
+
+  function openSidebar() {
+    document.querySelector('.sidebar').classList.add('mob-open');
+    document.querySelector('.mob-overlay').classList.add('visible');
+  }
+  function closeSidebar() {
+    document.querySelector('.sidebar').classList.remove('mob-open');
+    document.querySelector('.mob-overlay').classList.remove('visible');
   }
 
   // Clock
