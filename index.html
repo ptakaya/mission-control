@@ -205,6 +205,29 @@
     .tpri { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
     .task-text { flex:1; font-size:13px; font-weight:400; }
 
+    /* ── TIMELINE ── */
+    .tl-wrap { display:flex; flex-direction:column; gap:0; }
+    .tl-unsched-label { font-size:10px; color:var(--t3); text-transform:uppercase; letter-spacing:.08em; font-weight:500; padding:0 0 6px 52px; }
+    .tl-unsched-row { display:flex; align-items:center; gap:8px; padding:6px 4px 6px 52px; border-radius:8px; cursor:pointer; transition:background .15s; }
+    .tl-unsched-row:hover { background:var(--surface-hi); }
+    .tl-unsched-row.done .task-text { text-decoration:line-through; color:var(--t3); }
+    .tl-unsched-row.done { opacity:.4; }
+    .tl-grid { position:relative; }
+    .tl-hour { position:absolute; left:0; right:0; height:64px; display:flex; align-items:flex-start; pointer-events:none; }
+    .tl-hour-label { width:44px; font-size:10px; color:var(--t3); text-align:right; padding-right:10px; margin-top:-7px; flex-shrink:0; letter-spacing:.01em; white-space:nowrap; }
+    .tl-hour-line { flex:1; height:1px; background:rgba(255,255,255,.055); }
+    .tl-task { position:absolute; left:52px; right:0; min-height:40px; border-radius:8px; border-left:3px solid; background:rgba(255,255,255,.04); padding:6px 32px 6px 10px; cursor:pointer; transition:background .15s, opacity .2s; display:flex; flex-direction:column; justify-content:center; gap:2px; }
+    .tl-task:hover { background:rgba(255,255,255,.08); }
+    .tl-task.done { opacity:.35; }
+    .tl-task.done .tl-task-text { text-decoration:line-through; }
+    .tl-task-meta { display:flex; align-items:center; gap:6px; }
+    .tl-task-time { font-size:10px; color:var(--t3); white-space:nowrap; }
+    .tl-task-text { font-size:12px; color:var(--t1); font-weight:400; }
+    .tl-task-del { position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:11px; color:var(--t3); opacity:0; transition:opacity .15s; cursor:pointer; padding:4px; }
+    .tl-task:hover .tl-task-del { opacity:1; }
+    .tl-now { position:absolute; left:44px; right:0; height:2px; background:var(--rose); z-index:5; pointer-events:none; }
+    .tl-now::before { content:''; position:absolute; left:-5px; top:-3px; width:8px; height:8px; border-radius:50%; background:var(--rose); }
+    .tl-time-pick { background:transparent; border:none; color:var(--t3); font-size:10px; font-family:var(--ui); cursor:pointer; width:70px; outline:none; }
 
     /* ── MINI AGENT ROWS (dashboard card) ── */
     .mini-agent-row { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); }
@@ -644,11 +667,19 @@
               style="width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--t1);font-family:var(--ui);outline:none;margin-top:6px;transition:border-color .18s"
               onfocus="this.style.borderColor='var(--border-hi)'" onblur="this.style.borderColor='var(--border)'"
               onkeydown="if(event.key==='Enter')commitTask()">
-            <div style="display:flex;align-items:center;margin-top:10px;gap:6px">
-              <span style="font-size:10px;color:var(--t3);margin-right:2px">Priority</span>
-              <div class="tpri-sel active-sel" data-pri="rose"    style="background:var(--pri-hi)"  onclick="selPri('rose')"    title="High"></div>
-              <div class="tpri-sel"            data-pri="amber"   style="background:var(--pri-med)" onclick="selPri('amber')"   title="Medium"></div>
-              <div class="tpri-sel"            data-pri="emerald" style="background:var(--pri-lo)"  onclick="selPri('emerald')" title="Low"></div>
+            <div style="display:flex;align-items:center;margin-top:10px;gap:12px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:10px;color:var(--t3)">Priority</span>
+                <div class="tpri-sel active-sel" data-pri="rose"    style="background:var(--pri-hi)"  onclick="selPri('rose')"    title="High"></div>
+                <div class="tpri-sel"            data-pri="amber"   style="background:var(--pri-med)" onclick="selPri('amber')"   title="Medium"></div>
+                <div class="tpri-sel"            data-pri="emerald" style="background:var(--pri-lo)"  onclick="selPri('emerald')" title="Low"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:10px;color:var(--t3)">Time</span>
+                <input type="time" id="task-time-input" class="tl-time-pick"
+                  style="border:1px solid var(--border);border-radius:6px;padding:2px 6px;background:var(--surface);color:var(--t2)"
+                  onfocus="this.style.borderColor='var(--border-hi)'" onblur="this.style.borderColor='var(--border)'">
+              </div>
             </div>
           </div>
           <!-- Backlog -->
@@ -985,6 +1016,7 @@
     if (count) count.textContent = `${done} of ${total} done`;
   }
   tick(); setInterval(tick, 1000);
+  setInterval(updateNowLine, 30000);
 
   // Count-up animation
   function countUp(el, target, duration, prefix, suffix, decimals) {
@@ -1071,73 +1103,112 @@
   let dragIdx = null;
   let dragBacklogIdx = null;
 
+  const TL_START = 6, TL_END = 23, TL_PX = 64;
+
+  function fmt12(t) {
+    const [h, m] = t.split(':').map(Number);
+    const p = h >= 12 ? 'PM' : 'AM';
+    return `${h > 12 ? h-12 : h === 0 ? 12 : h}:${String(m).padStart(2,'0')} ${p}`;
+  }
+
+  function setTaskTime(i, val) {
+    taskData[i].time = val || null;
+    saveTasks(); renderTasks();
+  }
+
+  function updateNowLine() {
+    const el = document.getElementById('tl-now');
+    if (!el) return;
+    const now = new Date();
+    const mins = (now.getHours() - TL_START) * 60 + now.getMinutes();
+    const max = (TL_END - TL_START) * 60;
+    if (mins >= 0 && mins <= max) {
+      el.style.top = (mins / 60 * TL_PX) + 'px';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
   function renderTasks() {
     const wrap = document.getElementById('task-list-wrap');
     if (!wrap) return;
-    wrap.innerHTML = taskData.map((t, i) => `
-      <div class="task-row${t.done?' done':''}" data-idx="${i}" draggable="true">
-        <div class="drag-handle">${gripSVG}</div>
-        <div class="tchk" onclick="toggleTask(${i})">${t.done?'✓':''}</div>
-        <div class="tpri" style="background:${priColors[t.pri]}"></div>
-        <span class="task-text" contenteditable="true"
-          onblur="saveTaskText(${i},this.textContent.trim())"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
-          onclick="event.stopPropagation()">${t.text}</span>
-        <span class="task-del" onclick="event.stopPropagation();deleteTask(${i})">✕</span>
-      </div>`).join('');
 
-    // Drag-and-drop — per-row: only dragstart/dragend
-    wrap.querySelectorAll('.task-row').forEach(row => {
-      row.addEventListener('dragstart', e => {
-        dragIdx = +row.dataset.idx;
-        e.dataTransfer.effectAllowed = 'move';
-        setTimeout(() => row.style.opacity = '.4', 0);
-      });
-      row.addEventListener('dragend', () => {
-        row.style.opacity = '';
-        wrap.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
-      });
-    });
+    const unscheduled = taskData.map((t,i) => ({...t,i})).filter(t => !t.time);
+    const scheduled   = taskData.map((t,i) => ({...t,i})).filter(t =>  t.time).sort((a,b) => a.time.localeCompare(b.time));
+    const totalH = (TL_END - TL_START) * TL_PX;
 
-    function nearestRow(y) {
-      const rows = [...wrap.querySelectorAll('.task-row')];
-      let best = null, bestDist = Infinity;
-      rows.forEach(r => {
-        const rect = r.getBoundingClientRect();
-        const dist = Math.abs(y - (rect.top + rect.height / 2));
-        if (dist < bestDist) { bestDist = dist; best = r; }
+    let html = '<div class="tl-wrap">';
+
+    // Unscheduled section
+    if (unscheduled.length) {
+      html += `<div style="margin-bottom:16px">
+        <div class="tl-unsched-label">Unscheduled</div>`;
+      unscheduled.forEach(t => {
+        html += `<div class="tl-unsched-row${t.done?' done':''}" onclick="toggleTask(${t.i})">
+          <div class="tchk">${t.done?'✓':''}</div>
+          <div class="tpri" style="background:${priColors[t.pri]}"></div>
+          <span class="task-text" contenteditable="true"
+            onblur="saveTaskText(${t.i},this.textContent.trim())"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+            onclick="event.stopPropagation()">${t.text}</span>
+          <input type="time" class="tl-time-pick" title="Set time"
+            style="border:1px solid var(--border);border-radius:6px;padding:1px 4px;background:var(--surface);color:var(--t3)"
+            onchange="setTaskTime(${t.i},this.value)" onclick="event.stopPropagation()">
+          <span class="task-del" onclick="event.stopPropagation();deleteTask(${t.i})">✕</span>
+        </div>`;
       });
-      return best;
+      html += '</div>';
     }
 
-    // Container handles dragover + drop — fires even in gaps between rows
-    wrap.ondragover = e => {
-      e.preventDefault();
-      wrap.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
-      const closest = nearestRow(e.clientY);
-      if (!closest) return;
-      const rect = closest.getBoundingClientRect();
-      closest.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
-    };
+    // Timeline grid
+    html += `<div class="tl-grid" style="height:${totalH}px">`;
 
-    wrap.ondrop = e => {
-      e.preventDefault();
-      wrap.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
-      if (dragIdx === null) return;
-      const closest = nearestRow(e.clientY);
-      if (!closest) return;
-      const targetIdx = +closest.dataset.idx;
-      if (dragIdx === targetIdx) { dragIdx = null; return; }
-      const rect = closest.getBoundingClientRect();
-      const insertAfter = e.clientY >= rect.top + rect.height / 2;
-      const [moved] = taskData.splice(dragIdx, 1);
-      let insertAt = dragIdx < targetIdx ? targetIdx - 1 : targetIdx;
-      if (insertAfter) insertAt += 1;
-      taskData.splice(insertAt, 0, moved);
-      dragIdx = null;
-      saveTasks();
-      renderTasks();
-    };
+    // Hour rows
+    for (let h = TL_START; h < TL_END; h++) {
+      const top = (h - TL_START) * TL_PX;
+      const lbl = h === 12 ? '12 PM' : h > 12 ? `${h-12} PM` : `${h} AM`;
+      html += `<div class="tl-hour" style="top:${top}px">
+        <div class="tl-hour-label">${lbl}</div>
+        <div class="tl-hour-line"></div>
+      </div>`;
+    }
+
+    // Current time indicator
+    html += `<div class="tl-now" id="tl-now" style="display:none"></div>`;
+
+    // Scheduled task blocks
+    scheduled.forEach(t => {
+      const [h, m] = t.time.split(':').map(Number);
+      const top = ((h - TL_START) * 60 + m) / 60 * TL_PX;
+      const col = priColors[t.pri] || 'var(--t3)';
+      html += `<div class="tl-task${t.done?' done':''}" style="top:${top}px;border-left-color:${col}"
+        onclick="toggleTask(${t.i})">
+        <div class="tl-task-meta">
+          <span class="tl-task-time">${fmt12(t.time)}</span>
+          <div class="tpri" style="background:${col}"></div>
+        </div>
+        <div class="tl-task-text">${t.text}</div>
+        <span class="tl-task-del" onclick="event.stopPropagation();deleteTask(${t.i})">✕</span>
+      </div>`;
+    });
+
+    html += '</div></div>';
+    wrap.innerHTML = html;
+
+    updateNowLine();
+
+    // Auto-scroll to current time
+    const panel = document.getElementById('panel-tasks');
+    if (panel) {
+      const now = new Date();
+      const mins = (now.getHours() - TL_START) * 60 + now.getMinutes();
+      if (mins > 0) {
+        const unschedEl = wrap.querySelector('[style*="margin-bottom:16px"]');
+        const unschedH = unschedEl ? unschedEl.offsetHeight : 0;
+        panel.scrollTop = unschedH + (mins / 60 * TL_PX) - 120;
+      }
+    }
 
     updateTaskStats();
     renderDashTasks();
@@ -1186,11 +1257,14 @@
   }
   function commitTask() {
     const inp = document.getElementById('task-input');
+    const timeInp = document.getElementById('task-time-input');
     if (!inp) return;
     const text = inp.value.trim();
     if (!text) return;
-    taskData.push({ text, pri: selPriVal, done: false });
+    const time = timeInp?.value || null;
+    taskData.push({ text, pri: selPriVal, time: time || null, done: false });
     inp.value = '';
+    if (timeInp) timeInp.value = '';
     inp.style.borderColor = 'var(--border)';
     saveTasks();
     renderTasks();
