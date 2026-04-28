@@ -356,6 +356,8 @@
     /* Number count-up */
     .countable { animation:countUp .5s ease-out both; }
   </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -1025,7 +1027,10 @@
     { text:'Review subscription expenses',  tag:'Finance', pri:'emerald', done:false },
   ];
   let taskData = JSON.parse(localStorage.getItem('mc_tasks') || 'null') || DEFAULT_TASKS;
-  function saveTasks() { try { localStorage.setItem('mc_tasks', JSON.stringify(taskData)); } catch(e){} }
+  function saveTasks() {
+    try { localStorage.setItem('mc_tasks', JSON.stringify(taskData)); } catch(e){}
+    if (window._mcDb) window._mcDb.doc('users/pat').set({ tasks: taskData }, { merge: true }).catch(e => console.warn('[MC] Firestore task sync failed:', e.message));
+  }
   let selPriVal = 'rose', selTagVal = 'Work';
 
   const gripSVG = `<svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>`;
@@ -1169,7 +1174,10 @@
 
   // ── BACKLOG ──
   let backlogData = JSON.parse(localStorage.getItem('mc_backlog') || '[]');
-  function saveBacklog() { try { localStorage.setItem('mc_backlog', JSON.stringify(backlogData)); } catch(e){} }
+  function saveBacklog() {
+    try { localStorage.setItem('mc_backlog', JSON.stringify(backlogData)); } catch(e){}
+    if (window._mcDb) window._mcDb.doc('users/pat').set({ backlog: backlogData }, { merge: true }).catch(e => console.warn('[MC] Firestore backlog sync failed:', e.message));
+  }
 
   function renderBacklog() {
     const wrap = document.getElementById('backlog-list');
@@ -1460,6 +1468,61 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
+
+  // ── FIREBASE SYNC ──
+  (function() {
+    const firebaseConfig = {
+      apiKey: "AIzaSyB_I6Wt4QgANcs_8gq2AvGiQgKG9O8QyVM",
+      authDomain: "mission-control-9cf29.firebaseapp.com",
+      projectId: "mission-control-9cf29",
+      storageBucket: "mission-control-9cf29.firebasestorage.app",
+      messagingSenderId: "997821383940",
+      appId: "1:997821383940:web:dec1b7f5c1fed2e1277c51"
+    };
+    try {
+      firebase.initializeApp(firebaseConfig);
+      window._mcDb = firebase.firestore();
+      const ref = window._mcDb.doc('users/pat');
+
+      // Load from Firestore on startup -- Firestore wins over stale localStorage
+      ref.get().then(snap => {
+        if (!snap.exists) return;
+        const d = snap.data();
+        let changed = false;
+        if (d.tasks && d.tasks.length > 0) {
+          taskData.length = 0; d.tasks.forEach(t => taskData.push(t));
+          try { localStorage.setItem('mc_tasks', JSON.stringify(taskData)); } catch(e){}
+          renderTasks(); renderDashTasks(); changed = true;
+        }
+        if (d.backlog) {
+          backlogData.length = 0; d.backlog.forEach(b => backlogData.push(b));
+          try { localStorage.setItem('mc_backlog', JSON.stringify(backlogData)); } catch(e){}
+          renderBacklog(); changed = true;
+        }
+        if (changed) console.log('[MC] Loaded from Firestore');
+      }).catch(e => console.warn('[MC] Firestore load failed (localStorage active):', e.message));
+
+      // Real-time listener -- picks up changes from other devices instantly
+      ref.onSnapshot(snap => {
+        if (!snap.exists || snap.metadata.hasPendingWrites) return;
+        const d = snap.data();
+        if (d.tasks) {
+          taskData.length = 0; d.tasks.forEach(t => taskData.push(t));
+          try { localStorage.setItem('mc_tasks', JSON.stringify(taskData)); } catch(e){}
+          renderTasks(); renderDashTasks();
+        }
+        if (d.backlog) {
+          backlogData.length = 0; d.backlog.forEach(b => backlogData.push(b));
+          try { localStorage.setItem('mc_backlog', JSON.stringify(backlogData)); } catch(e){}
+          renderBacklog();
+        }
+      }, e => console.warn('[MC] Firestore listener error:', e.message));
+
+      console.log('[MC] Firebase sync active');
+    } catch(e) {
+      console.warn('[MC] Firebase init failed (localStorage only):', e.message);
+    }
+  })();
 </script>
 </body>
 </html>
