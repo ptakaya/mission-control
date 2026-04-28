@@ -205,32 +205,6 @@
     .tpri { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
     .task-text { flex:1; font-size:13px; font-weight:400; }
 
-    /* ── TIMELINE ── */
-    .tl-allday { display:flex; border-bottom:1px solid rgba(255,255,255,.08); padding-bottom:6px; margin-bottom:2px; }
-    .tl-allday-lbl { width:44px; font-size:10px; color:var(--t3); text-align:right; padding-right:10px; padding-top:10px; flex-shrink:0; letter-spacing:.01em; }
-    .tl-allday-tasks { flex:1; padding:4px 0 0 8px; display:flex; flex-direction:column; gap:2px; min-height:28px; }
-    .tl-allday-row { display:flex; align-items:center; gap:7px; padding:5px 6px; border-radius:7px; cursor:pointer; transition:background .15s; position:relative; }
-    .tl-allday-row:hover { background:rgba(255,255,255,.05); }
-    .tl-allday-row.done { opacity:.38; }
-    .tl-allday-row.done .task-text { text-decoration:line-through; color:var(--t3); }
-    .tl-allday-del { font-size:11px; color:var(--t3); opacity:0; transition:opacity .15s; cursor:pointer; margin-left:auto; padding:0 4px; }
-    .tl-allday-row:hover .tl-allday-del { opacity:1; }
-    .tl-set-time { font-size:10px; color:var(--t3); opacity:0; transition:opacity .15s; cursor:pointer; padding:1px 5px; border-radius:4px; border:1px solid var(--border); background:var(--surface); font-family:var(--ui); outline:none; width:76px; }
-    .tl-allday-row:hover .tl-set-time { opacity:1; }
-    .tl-grid { position:relative; }
-    .tl-hour { position:absolute; left:0; right:0; height:64px; display:flex; align-items:flex-start; pointer-events:none; }
-    .tl-hour-label { width:44px; font-size:10px; color:var(--t3); text-align:right; padding-right:10px; margin-top:-7px; flex-shrink:0; letter-spacing:.01em; white-space:nowrap; }
-    .tl-hour-line { flex:1; height:1px; background:rgba(255,255,255,.055); }
-    .tl-task { position:absolute; left:52px; right:0; min-height:40px; border-radius:8px; border-left:3px solid; background:rgba(255,255,255,.04); padding:6px 32px 6px 10px; cursor:pointer; transition:background .15s, opacity .2s; display:flex; flex-direction:column; justify-content:center; gap:2px; }
-    .tl-task:hover { background:rgba(255,255,255,.08); }
-    .tl-task.done { opacity:.35; }
-    .tl-task.done .tl-task-text { text-decoration:line-through; }
-    .tl-task-time { font-size:10px; color:var(--t3); white-space:nowrap; }
-    .tl-task-text { font-size:12px; color:var(--t1); font-weight:400; }
-    .tl-task-del { position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:11px; color:var(--t3); opacity:0; transition:opacity .15s; cursor:pointer; padding:4px; }
-    .tl-task:hover .tl-task-del { opacity:1; }
-    .tl-now { position:absolute; left:44px; right:0; height:2px; background:var(--rose); z-index:5; pointer-events:none; }
-    .tl-now::before { content:''; position:absolute; left:-5px; top:-3px; width:8px; height:8px; border-radius:50%; background:var(--rose); }
 
     /* ── MINI AGENT ROWS (dashboard card) ── */
     .mini-agent-row { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); }
@@ -670,19 +644,11 @@
               style="width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--t1);font-family:var(--ui);outline:none;margin-top:6px;transition:border-color .18s"
               onfocus="this.style.borderColor='var(--border-hi)'" onblur="this.style.borderColor='var(--border)'"
               onkeydown="if(event.key==='Enter')commitTask()">
-            <div style="display:flex;align-items:center;margin-top:10px;gap:12px;flex-wrap:wrap">
-              <div style="display:flex;align-items:center;gap:6px">
-                <span style="font-size:10px;color:var(--t3)">Priority</span>
-                <div class="tpri-sel active-sel" data-pri="rose"    style="background:var(--pri-hi)"  onclick="selPri('rose')"    title="High"></div>
-                <div class="tpri-sel"            data-pri="amber"   style="background:var(--pri-med)" onclick="selPri('amber')"   title="Medium"></div>
-                <div class="tpri-sel"            data-pri="emerald" style="background:var(--pri-lo)"  onclick="selPri('emerald')" title="Low"></div>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <span style="font-size:10px;color:var(--t3)">Time</span>
-                <input type="time" id="task-time-input" class="tl-time-pick"
-                  style="border:1px solid var(--border);border-radius:6px;padding:2px 6px;background:var(--surface);color:var(--t2)"
-                  onfocus="this.style.borderColor='var(--border-hi)'" onblur="this.style.borderColor='var(--border)'">
-              </div>
+            <div style="display:flex;align-items:center;margin-top:10px;gap:6px">
+              <span style="font-size:10px;color:var(--t3);margin-right:2px">Priority</span>
+              <div class="tpri-sel active-sel" data-pri="rose"    style="background:var(--pri-hi)"  onclick="selPri('rose')"    title="High"></div>
+              <div class="tpri-sel"            data-pri="amber"   style="background:var(--pri-med)" onclick="selPri('amber')"   title="Medium"></div>
+              <div class="tpri-sel"            data-pri="emerald" style="background:var(--pri-lo)"  onclick="selPri('emerald')" title="Low"></div>
             </div>
           </div>
           <!-- Backlog -->
@@ -1019,7 +985,6 @@
     if (count) count.textContent = `${done} of ${total} done`;
   }
   tick(); setInterval(tick, 1000);
-  setInterval(updateNowLine, 30000);
 
   // Count-up animation
   function countUp(el, target, duration, prefix, suffix, decimals) {
@@ -1106,93 +1071,73 @@
   let dragIdx = null;
   let dragBacklogIdx = null;
 
-  const TL_START = 6, TL_END = 23, TL_PX = 64;
-
-  function fmt12(t) {
-    const [h, m] = t.split(':').map(Number);
-    const p = h >= 12 ? 'PM' : 'AM';
-    return `${h > 12 ? h-12 : h === 0 ? 12 : h}:${String(m).padStart(2,'0')} ${p}`;
-  }
-
-  function setTaskTime(i, val) {
-    taskData[i].time = val || null;
-    saveTasks(); renderTasks();
-  }
-
-  function updateNowLine() {
-    const el = document.getElementById('tl-now');
-    if (!el) return;
-    const now = new Date();
-    const mins = (now.getHours() - TL_START) * 60 + now.getMinutes();
-    const max = (TL_END - TL_START) * 60;
-    el.style.top = (mins / 60 * TL_PX) + 'px';
-    el.style.display = (mins >= 0 && mins <= max) ? 'block' : 'none';
-  }
-
   function renderTasks() {
     const wrap = document.getElementById('task-list-wrap');
     if (!wrap) return;
-
-    const unscheduled = taskData.map((t,i) => ({...t,i})).filter(t => !t.time);
-    const scheduled   = taskData.map((t,i) => ({...t,i})).filter(t =>  t.time).sort((a,b) => a.time.localeCompare(b.time));
-    const totalH = (TL_END - TL_START) * TL_PX;
-
-    // All Day header row
-    let html = `<div class="tl-allday">
-      <div class="tl-allday-lbl">All Day</div>
-      <div class="tl-allday-tasks">`;
-
-    unscheduled.forEach(t => {
-      html += `<div class="tl-allday-row${t.done?' done':''}" onclick="toggleTask(${t.i})">
-        <div class="tchk">${t.done?'✓':''}</div>
+    wrap.innerHTML = taskData.map((t, i) => `
+      <div class="task-row${t.done?' done':''}" data-idx="${i}" draggable="true">
+        <div class="drag-handle">${gripSVG}</div>
+        <div class="tchk" onclick="toggleTask(${i})">${t.done?'✓':''}</div>
         <div class="tpri" style="background:${priColors[t.pri]}"></div>
         <span class="task-text" contenteditable="true"
-          onblur="saveTaskText(${t.i},this.textContent.trim())"
+          onblur="saveTaskText(${i},this.textContent.trim())"
           onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
           onclick="event.stopPropagation()">${t.text}</span>
-        <input type="time" class="tl-set-time" title="Add to timeline"
-          onchange="setTaskTime(${t.i},this.value)" onclick="event.stopPropagation()">
-        <span class="tl-allday-del" onclick="event.stopPropagation();deleteTask(${t.i})">✕</span>
-      </div>`;
+        <span class="task-del" onclick="event.stopPropagation();deleteTask(${i})">✕</span>
+      </div>`).join('');
+
+    // Drag-and-drop — per-row: only dragstart/dragend
+    wrap.querySelectorAll('.task-row').forEach(row => {
+      row.addEventListener('dragstart', e => {
+        dragIdx = +row.dataset.idx;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => row.style.opacity = '.4', 0);
+      });
+      row.addEventListener('dragend', () => {
+        row.style.opacity = '';
+        wrap.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      });
     });
 
-    if (!unscheduled.length) html += `<div style="font-size:11px;color:var(--t3);padding:8px 0">All tasks are scheduled</div>`;
-
-    html += `</div></div>`;
-
-    // Time grid
-    html += `<div class="tl-grid" style="height:${totalH}px">`;
-    for (let h = TL_START; h < TL_END; h++) {
-      const top = (h - TL_START) * TL_PX;
-      const lbl = h === 12 ? '12 PM' : h > 12 ? `${h-12} PM` : `${h} AM`;
-      html += `<div class="tl-hour" style="top:${top}px">
-        <div class="tl-hour-label">${lbl}</div>
-        <div class="tl-hour-line"></div>
-      </div>`;
+    function nearestRow(y) {
+      const rows = [...wrap.querySelectorAll('.task-row')];
+      let best = null, bestDist = Infinity;
+      rows.forEach(r => {
+        const rect = r.getBoundingClientRect();
+        const dist = Math.abs(y - (rect.top + rect.height / 2));
+        if (dist < bestDist) { bestDist = dist; best = r; }
+      });
+      return best;
     }
-    html += `<div class="tl-now" id="tl-now" style="display:none"></div>`;
-    scheduled.forEach(t => {
-      const [h, m] = t.time.split(':').map(Number);
-      const top = ((h - TL_START) * 60 + m) / 60 * TL_PX;
-      const col = priColors[t.pri] || 'var(--t3)';
-      html += `<div class="tl-task${t.done?' done':''}" style="top:${top}px;border-left-color:${col}" onclick="toggleTask(${t.i})">
-        <div class="tl-task-time">${fmt12(t.time)}</div>
-        <div class="tl-task-text">${t.text}</div>
-        <span class="tl-task-del" onclick="event.stopPropagation();deleteTask(${t.i})">✕</span>
-      </div>`;
-    });
-    html += '</div>';
 
-    wrap.innerHTML = html;
-    updateNowLine();
+    // Container handles dragover + drop — fires even in gaps between rows
+    wrap.ondragover = e => {
+      e.preventDefault();
+      wrap.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      const closest = nearestRow(e.clientY);
+      if (!closest) return;
+      const rect = closest.getBoundingClientRect();
+      closest.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
+    };
 
-    // Scroll to current time
-    const panel = document.getElementById('panel-tasks');
-    if (panel) {
-      const now = new Date();
-      const mins = (now.getHours() - TL_START) * 60 + now.getMinutes();
-      if (mins > 30) setTimeout(() => { panel.scrollTop = (mins / 60 * TL_PX) - 80; }, 50);
-    }
+    wrap.ondrop = e => {
+      e.preventDefault();
+      wrap.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      if (dragIdx === null) return;
+      const closest = nearestRow(e.clientY);
+      if (!closest) return;
+      const targetIdx = +closest.dataset.idx;
+      if (dragIdx === targetIdx) { dragIdx = null; return; }
+      const rect = closest.getBoundingClientRect();
+      const insertAfter = e.clientY >= rect.top + rect.height / 2;
+      const [moved] = taskData.splice(dragIdx, 1);
+      let insertAt = dragIdx < targetIdx ? targetIdx - 1 : targetIdx;
+      if (insertAfter) insertAt += 1;
+      taskData.splice(insertAt, 0, moved);
+      dragIdx = null;
+      saveTasks();
+      renderTasks();
+    };
 
     updateTaskStats();
     renderDashTasks();
@@ -1241,14 +1186,11 @@
   }
   function commitTask() {
     const inp = document.getElementById('task-input');
-    const timeInp = document.getElementById('task-time-input');
     if (!inp) return;
     const text = inp.value.trim();
     if (!text) return;
-    const time = timeInp?.value || null;
-    taskData.push({ text, pri: selPriVal, time: time || null, done: false });
+    taskData.push({ text, pri: selPriVal, done: false });
     inp.value = '';
-    if (timeInp) timeInp.value = '';
     inp.style.borderColor = 'var(--border)';
     saveTasks();
     renderTasks();
@@ -1463,11 +1405,11 @@
     dow:  { val: 40312.45, chg:  0.24 },
     ndx:  { val: 17891.32, chg:  0.18 },
     spx:  { val:  5421.03, chg:  0.31 },
-    tny:  { val:     4.28, chg:     0 },
+    tny:  { val:     4.28, chg: -0.02 },
     oil:  { val:    63.47, chg: -0.84 },
     gas:  { val:     2.14, chg:  1.23 },
     gld:  { val:  3312.50, chg:  0.47 },
-    vix:  { val:    22.31, chg:     0 },
+    vix:  { val:    22.31, chg: -3.10 }
   };
 
   function renderMkt(id, chgId, val, chg, isYield) {
@@ -1475,8 +1417,8 @@
     if (!el || !ce) return;
     el.textContent = isYield ? val.toFixed(2) + '%' : val >= 1000 ? val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : val.toFixed(2);
     const sign = chg >= 0 ? '+' : '';
-    ce.textContent = chg !== 0 ? sign + chg.toFixed(2) + '%' : '—';
-    ce.className = 'mkt-chg ' + (chg > 0 ? 'mkt-up' : chg < 0 ? 'mkt-dn' : '');
+    ce.textContent = sign + chg.toFixed(2) + '%';
+    ce.className = 'mkt-chg ' + (chg >= 0 ? 'mkt-up' : 'mkt-dn');
   }
 
   function setMktStatus(live) {
@@ -1487,7 +1429,7 @@
       lbl.textContent = 'Live'; lbl.style.color = 'var(--emerald)';
     } else {
       dot.style.background = 'var(--amber)'; dot.style.boxShadow = '0 0 6px rgba(252,211,77,.6)';
-      lbl.textContent = 'Delayed'; lbl.style.color = 'var(--amber)';
+      lbl.textContent = 'Simulated'; lbl.style.color = 'var(--amber)';
     }
   }
 
@@ -1504,22 +1446,28 @@
 
   async function fetchMarkets() {
     try {
-      const res = await fetch('/api/markets', { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) throw new Error('proxy error');
+      const res = await fetch('/api/markets', { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error('bad status');
       const json = await res.json();
-      if (!json.ok || !json.data) throw new Error('no data');
-      const d = json.data;
-      ['dow','ndx','spx','oil','gas','gld'].forEach(k => {
-        if (d[k]) {
-          mktSim[k].val = d[k].price;
-          mktSim[k].chg = d[k].open ? ((d[k].price - d[k].open) / d[k].open * 100) : mktSim[k].chg;
+      const quotes = json.quoteResponse?.result;
+      if (!quotes || quotes.length < 4) throw new Error('no data');
+      const map = {};
+      quotes.forEach(q => { map[q.symbol] = q; });
+      const bind = (key, sym) => {
+        if (map[sym]) {
+          mktSim[key].val = map[sym].regularMarketPrice ?? mktSim[key].val;
+          mktSim[key].chg = map[sym].regularMarketChangePercent ?? mktSim[key].chg;
         }
-      });
-      if (d.tny) { mktSim.tny.val = d.tny.price; mktSim.tny.chg = 0; }
-      if (d.vix) { mktSim.vix.val = d.vix.price; mktSim.vix.chg = 0; }
+      };
+      bind('dow','^DJI'); bind('ndx','^IXIC'); bind('spx','^GSPC'); bind('tny','^TNX');
+      bind('oil','CL=F'); bind('gas','NG=F'); bind('gld','GC=F'); bind('vix','^VIX');
       applyMkt(mktSim);
       setMktStatus(true);
     } catch {
+      ['dow','ndx','spx','oil','gld'].forEach(k => { mktSim[k].val *= 1 + (Math.random() - 0.5) * 0.0002; });
+      mktSim.tny.val += (Math.random() - 0.5) * 0.002;
+      mktSim.gas.val += (Math.random() - 0.5) * 0.003;
+      mktSim.vix.val += (Math.random() - 0.5) * 0.05;
       applyMkt(mktSim);
       setMktStatus(false);
     }
