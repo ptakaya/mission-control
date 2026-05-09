@@ -34,13 +34,18 @@ export default {
       const [stooqResults, vixRes, treasuryRes] = await Promise.all([
         Promise.all(
           Object.entries(stooqSymbols).map(async ([key, sym]) => {
-            const r = await fetch(
-              `https://stooq.com/q/l/?s=${encodeURIComponent(sym)}&f=sd2t2ohlcvn&e=json`,
-              { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }
-            );
-            const d = await r.json();
-            const q = d?.symbols?.[0];
-            return [key, q?.close != null ? { price: parseFloat(q.close), open: parseFloat(q.open) } : null];
+            try {
+              const r = await fetch(
+                `https://stooq.com/q/l/?s=${encodeURIComponent(sym)}&f=sd2t2ohlcvn&e=json`,
+                { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }
+              );
+              const text = await r.text();
+              const d = JSON.parse(text);
+              const q = d?.symbols?.[0];
+              return [key, q?.close != null ? { price: parseFloat(q.close), open: parseFloat(q.open) } : null];
+            } catch (_) {
+              return [key, null];
+            }
           })
         ),
         fetch('https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json'),

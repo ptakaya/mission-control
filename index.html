@@ -1535,7 +1535,7 @@
   }
 
   // Replace YOUR_WORKER_URL with your deployed Cloudflare Worker URL after deploying worker-markets.js
-  const MARKETS_WORKER_URL = 'YOUR_WORKER_URL';
+  const MARKETS_WORKER_URL = 'https://wispy-butterfly-334c.patricktakaya.workers.dev';
 
   async function fetchMarkets() {
     if (!MARKETS_WORKER_URL || MARKETS_WORKER_URL === 'YOUR_WORKER_URL') { setMktStatus(false); return; }
