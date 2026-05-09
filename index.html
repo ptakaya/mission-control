@@ -1422,10 +1422,13 @@
       const evs = calEvents[key] || [];
       html += `<div class="cal-full-day${isToday?' today':''}" data-key="${key}">`;
       html += `<div class="cal-full-daynum">${d}</div>`;
-      evs.forEach((e, ei) => {
+      const visible = evs.slice(0, 3);
+      const overflow = evs.length - visible.length;
+      visible.forEach((e, ei) => {
         const label = e.t && e.t !== 'All day' ? e.t + ' ' : '';
         html += `<div class="cal-event-chip ${e.c}" data-key="${key}" data-idx="${ei}">${label}${e.n}</div>`;
       });
+      if (overflow > 0) html += `<div style="font-size:9px;color:var(--t3);padding:1px 4px">+${overflow} more</div>`;
       html += '</div>';
     }
     gridEl.innerHTML = html;

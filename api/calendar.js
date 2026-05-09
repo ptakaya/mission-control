@@ -80,6 +80,7 @@ module.exports = async function handler(req, res) {
 
     if (req.method === 'GET') {
       const now = new Date();
+      now.setHours(0, 0, 0, 0); // start of today -- ensures today's all-day events are included
       const threeMonths = new Date();
       threeMonths.setMonth(threeMonths.getMonth() + 3);
       const params = new URLSearchParams({
