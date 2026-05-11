@@ -50,8 +50,18 @@ module.exports = async function handler(req, res) {
       fetch(`${BASE}/recovery/collection?limit=7`, { headers: h })
     ]);
 
+    // Parse each response safely, returning status info on failure
+    async function safeJson(res, label) {
+      const text = await res.text();
+      try { return JSON.parse(text); }
+      catch(e) { throw new Error(`${label} returned ${res.status}: ${text.slice(0,200)}`); }
+    }
+
     const [recData, cycleData, sleepData, weekData] = await Promise.all([
-      recRes.json(), cycleRes.json(), sleepRes.json(), weekRes.json()
+      safeJson(recRes,   'recovery'),
+      safeJson(cycleRes, 'cycle'),
+      safeJson(sleepRes, 'sleep'),
+      safeJson(weekRes,  'weeklyRecovery')
     ]);
 
     const rec   = recData.records?.[0];
