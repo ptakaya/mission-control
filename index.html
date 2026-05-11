@@ -1829,6 +1829,18 @@
         });
       }
 
+      // Update dashboard bento recovery card
+      if (recovery) {
+        const statRec = document.getElementById('stat-rec');
+        if (statRec) statRec.innerHTML = recovery.score + '<span style="font-size:18px;color:var(--t3)">%</span>';
+        const col = whoopColor(recovery.score);
+        const dashSub = document.querySelector('.card.glow-emerald .card-sub');
+        if (dashSub) {
+          dashSub.textContent = whoopLabel(recovery.score) + ' · WHOOP';
+          dashSub.style.color = `var(--${col})`;
+        }
+      }
+
       // Remove "not connected" banner
       const note = document.querySelector('.whoop-note');
       if (note) note.remove();
