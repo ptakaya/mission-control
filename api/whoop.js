@@ -10,12 +10,14 @@ const REFRESH_TOKEN = process.env.WHOOP_REFRESH_TOKEN;
 const BASE          = 'https://api.prod.whoop.com/developer/v1';
 
 async function getAccessToken() {
+  const basicAuth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
   const r = await fetch('https://api.prod.whoop.com/oauth/oauth2/token', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      'Content-Type':  'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${basicAuth}`
+    },
     body: new URLSearchParams({
-      client_id:     CLIENT_ID,
-      client_secret: CLIENT_SECRET,
       refresh_token: REFRESH_TOKEN,
       grant_type:    'refresh_token'
     }).toString()
