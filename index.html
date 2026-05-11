@@ -1719,6 +1719,124 @@
   // Replace YOUR_WORKER_URL with your deployed Cloudflare Worker URL after deploying worker-markets.js
   const MARKETS_WORKER_URL = 'https://wispy-butterfly-334c.patricktakaya.workers.dev';
 
+  // ── WHOOP ──
+  function whoopColor(score) {
+    if (score >= 67) return 'emerald';
+    if (score >= 34) return 'amber';
+    return 'rose';
+  }
+  function whoopLabel(score) {
+    if (score >= 67) return 'Well Recovered';
+    if (score >= 34) return 'Moderate';
+    return 'Low Recovery';
+  }
+  function recoveryOffset(score) { return (289 * (1 - score / 100)).toFixed(1); }
+  function strainOffset(score)   { return (289 * (1 - score / 21)).toFixed(1); }
+
+  async function fetchWhoop() {
+    try {
+      const res  = await fetch('/api/whoop', { signal: AbortSignal.timeout(10000) });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+
+      const { recovery, strain, sleep, weeklyRecovery } = data;
+
+      // Recovery ring
+      if (recovery) {
+        const col = whoopColor(recovery.score);
+        const scoreEl = document.querySelector('.rscore.emerald');
+        if (scoreEl) { scoreEl.textContent = recovery.score; scoreEl.className = `rscore ${col}`; }
+        const recCircle = document.querySelector('#panel-health .glow-emerald circle:last-child');
+        if (recCircle) {
+          recCircle.setAttribute('stroke-dashoffset', recoveryOffset(recovery.score));
+          recCircle.setAttribute('stroke', col === 'emerald' ? '#6ee7b7' : col === 'amber' ? '#fcd34d' : '#fda4af');
+        }
+        const recLabel = document.querySelector('#panel-health .glow-emerald [style*="font-size:11px"]');
+        if (recLabel) recLabel.textContent = whoopLabel(recovery.score) + ' · Recovery';
+      }
+
+      // Strain ring
+      if (strain) {
+        const strainEl = document.querySelector('.rscore.sky');
+        if (strainEl) strainEl.textContent = strain.score;
+        const strainCircle = document.querySelector('#panel-health .glow-sky circle:last-child');
+        if (strainCircle) strainCircle.setAttribute('stroke-dashoffset', strainOffset(strain.score));
+      }
+
+      // Vitals
+      if (recovery) {
+        const rows = document.querySelectorAll('#panel-health .hrow');
+        rows.forEach(row => {
+          const label = row.querySelector('.hname')?.textContent?.trim();
+          const val   = row.querySelector('.hval');
+          if (!val) return;
+          if (label === 'Resting HR') val.innerHTML = `${recovery.rhr} <span style="font-size:10px;color:var(--t3)">bpm</span>`;
+          if (label === 'HRV')        val.innerHTML = `${recovery.hrv} <span style="font-size:10px;color:var(--t3)">ms</span>`;
+          if (label === 'SpO₂')       val.innerHTML = `${recovery.spo2}<span style="font-size:10px;color:var(--t3)">%</span>`;
+        });
+      }
+      if (sleep) {
+        const rows = document.querySelectorAll('#panel-health .hrow');
+        rows.forEach(row => {
+          const label = row.querySelector('.hname')?.textContent?.trim();
+          const val   = row.querySelector('.hval');
+          if (!val) return;
+          if (label === 'Sleep')             val.textContent = sleep.stages.total;
+          if (label === 'Sleep Performance') val.innerHTML   = `${sleep.performance}<span style="font-size:10px;color:var(--t3)">%</span>`;
+        });
+      }
+
+      // Sleep stages bars
+      if (sleep) {
+        const stageRows = document.querySelectorAll('#panel-health .brow');
+        const totalMs =
+          (sleep._raw_light ?? 0) + (sleep._raw_deep ?? 0) + (sleep._raw_rem ?? 0) + (sleep._raw_awake ?? 0) || 1;
+        stageRows.forEach(row => {
+          const label = row.querySelector('.blabel')?.textContent?.trim();
+          const bar   = row.querySelector('.prog-fill');
+          const amt   = row.querySelector('.bamount');
+          if (!bar || !amt) return;
+          if (label === 'REM')   { amt.textContent = sleep.stages.rem;   }
+          if (label === 'Deep')  { amt.textContent = sleep.stages.deep;  }
+          if (label === 'Light') { amt.textContent = sleep.stages.light; }
+          if (label === 'Awake') { amt.textContent = sleep.stages.awake; }
+        });
+      }
+
+      // Weekly recovery bar chart
+      if (weeklyRecovery && weeklyRecovery.length) {
+        const bars = document.querySelectorAll('#panel-health .card:last-child [style*="flex-direction:column"]');
+        const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        weeklyRecovery.forEach((rec, i) => {
+          const bar = bars[i];
+          if (!bar || rec.score === null) return;
+          const col = whoopColor(rec.score);
+          const fill = bar.querySelector('div');
+          if (fill) {
+            fill.style.height = rec.score + '%';
+            fill.style.background = col === 'emerald' ? 'rgba(110,231,183,.4)' : col === 'amber' ? 'rgba(252,211,77,.4)' : 'rgba(253,164,175,.4)';
+          }
+          const label = bar.querySelector('span');
+          if (label) {
+            const d = new Date(rec.date + 'T12:00:00');
+            label.textContent = days[d.getDay()];
+          }
+        });
+      }
+
+      // Remove "not connected" banner
+      const note = document.querySelector('.whoop-note');
+      if (note) note.remove();
+
+      // Update panel subtitle
+      const sub = document.querySelector('#panel-health .panel-sub');
+      if (sub) sub.textContent = 'WHOOP · Live';
+
+    } catch (e) {
+      console.warn('WHOOP fetch failed:', e.message);
+    }
+  }
+
   async function fetchMarkets() {
     if (!MARKETS_WORKER_URL || MARKETS_WORKER_URL === 'YOUR_WORKER_URL') { setMktStatus(false); return; }
     try {
@@ -1751,6 +1869,8 @@
   fetchMarkets();
   setInterval(fetchMarkets, 60000);
 
+  fetchWhoop();
+  setInterval(fetchWhoop, 15 * 60 * 1000); // refresh every 15 minutes
 
   // Init dashboard animations on load
   animateDashboard();
