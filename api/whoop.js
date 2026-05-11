@@ -17,7 +17,8 @@ async function getAccessToken() {
       client_id:     CLIENT_ID,
       client_secret: CLIENT_SECRET,
       refresh_token: REFRESH_TOKEN,
-      grant_type:    'refresh_token'
+      grant_type:    'refresh_token',
+      redirect_uri:  'http://localhost:3000/callback'
     }).toString()
   });
   const d = await r.json();
