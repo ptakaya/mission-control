@@ -14,11 +14,10 @@ async function getAccessToken() {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id:     CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      refresh_token: REFRESH_TOKEN,
       grant_type:    'refresh_token',
-      redirect_uri:  'http://localhost:3000/callback'
+      refresh_token: REFRESH_TOKEN,
+      client_id:     CLIENT_ID,
+      client_secret: CLIENT_SECRET
     }).toString()
   });
   const d = await r.json();
