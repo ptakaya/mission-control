@@ -48,6 +48,11 @@ module.exports = async function handler(req, res) {
     const token = await getAccessToken();
     const h = { Authorization: `Bearer ${token}` };
 
+    // Diagnostic: test which endpoints are reachable
+    const profileRes = await fetch(`${BASE}/user/profile/basic`, { headers: h });
+    const profileText = await profileRes.text();
+    return res.status(200).json({ ok: true, debug: true, profileStatus: profileRes.status, profileBody: profileText.slice(0, 500) });
+
     // Fetch latest recovery, cycle, sleep, and last 7 recoveries in parallel
     const [recRes, cycleRes, sleepRes, weekRes] = await Promise.all([
       fetch(`${BASE}/recovery/collection?limit=1`, { headers: h }),
