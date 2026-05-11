@@ -4,9 +4,9 @@
 //   WHOOP_CLIENT_SECRET
 //   WHOOP_REFRESH_TOKEN
 
-const CLIENT_ID     = process.env.WHOOP_CLIENT_ID;
-const CLIENT_SECRET = process.env.WHOOP_CLIENT_SECRET;
-const REFRESH_TOKEN = process.env.WHOOP_REFRESH_TOKEN;
+const CLIENT_ID     = (process.env.WHOOP_CLIENT_ID     || '').trim();
+const CLIENT_SECRET = (process.env.WHOOP_CLIENT_SECRET || '').trim();
+const REFRESH_TOKEN = (process.env.WHOOP_REFRESH_TOKEN || '').trim();
 const BASE          = 'https://api.prod.whoop.com/developer/v1';
 
 async function getAccessToken() {
@@ -37,6 +37,12 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'Method not allowed' });
+
+  if (!CLIENT_ID || !CLIENT_SECRET || !REFRESH_TOKEN) {
+    return res.status(500).json({ ok: false, error: 'Missing env vars', debug: {
+      hasClientId: !!CLIENT_ID, hasClientSecret: !!CLIENT_SECRET, hasRefreshToken: !!REFRESH_TOKEN
+    }});
+  }
 
   try {
     const token = await getAccessToken();
