@@ -1103,6 +1103,8 @@
     requestAnimationFrame(step);
   }
 
+  let whoopRecoveryScore = null; // set by fetchWhoop(), used by animateDashboard()
+
   function animateDashboard() {
     setTimeout(() => {
       const tasks = document.getElementById('stat-tasks');
@@ -1117,13 +1119,13 @@
       if (agents) countUp(agents, 5, 900);
       if (comms) countUp(comms, 12, 700);
       if (rec) {
-        // Recovery keeps suffix
+        const target = whoopRecoveryScore !== null ? whoopRecoveryScore : 0;
         const start = performance.now();
         const dur = 1200;
         function step(now) {
           const p = Math.min((now - start) / dur, 1);
           const e = 1 - Math.pow(1 - p, 3);
-          rec.innerHTML = Math.round(e * 84) + '<span style="font-size:22px;color:var(--t3)">%</span>';
+          rec.innerHTML = Math.round(e * target) + '<span style="font-size:22px;color:var(--t3)">%</span>';
           if (p < 1) requestAnimationFrame(step);
         }
         requestAnimationFrame(step);
@@ -1831,10 +1833,11 @@
 
       // Update dashboard bento recovery card
       if (recovery) {
+        whoopRecoveryScore = recovery.score;
         const statRec = document.getElementById('stat-rec');
-        if (statRec) statRec.innerHTML = recovery.score + '<span style="font-size:18px;color:var(--t3)">%</span>';
+        if (statRec) statRec.innerHTML = recovery.score + '<span style="font-size:22px;color:var(--t3)">%</span>';
         const col = whoopColor(recovery.score);
-        const dashSub = document.querySelector('.card.glow-emerald .card-sub');
+        const dashSub = document.querySelector('#panel-dashboard .card.glow-emerald .card-sub');
         if (dashSub) {
           dashSub.textContent = whoopLabel(recovery.score) + ' · WHOOP';
           dashSub.style.color = `var(--${col})`;
