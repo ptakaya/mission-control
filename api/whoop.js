@@ -1,35 +1,17 @@
 // Vercel Serverless Function -- WHOOP API proxy
-// Handles WHOOP's rotating refresh tokens by returning the new token to the client,
-// which stores it in localStorage and sends it back on subsequent requests.
+//
+// Architecture note: WHOOP uses rotating refresh tokens that expire quickly.
+// The simplest robust approach: store the access token directly.
+// Access tokens last ~60 minutes. When expired, re-run scripts/get-whoop-token.js
+// and update WHOOP_ACCESS_TOKEN in Vercel. A proper long-term solution (Firestore
+// token persistence) can be built when back at base.
 //
 // Environment variables required (set in Vercel dashboard):
-//   WHOOP_CLIENT_ID
-//   WHOOP_CLIENT_SECRET
-//   WHOOP_REFRESH_TOKEN  (seed token -- replaced by localStorage on client after first use)
+//   WHOOP_ACCESS_TOKEN   (from scripts/get-whoop-token.js -- expires in ~60 min)
 
-const CLIENT_ID     = (process.env.WHOOP_CLIENT_ID     || '').trim();
-const CLIENT_SECRET = (process.env.WHOOP_CLIENT_SECRET || '').trim();
-const ENV_TOKEN     = (process.env.WHOOP_REFRESH_TOKEN || '').trim();
-const BASE          = 'https://api.prod.whoop.com/developer/v1';
-
-async function getAccessToken(refreshToken) {
-  const params = new URLSearchParams({
-    grant_type:    'refresh_token',
-    refresh_token: refreshToken,
-    client_id:     CLIENT_ID,
-    client_secret: CLIENT_SECRET
-  });
-  const r = await fetch('https://api.prod.whoop.com/oauth/oauth2/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString()
-  });
-  const text = await r.text();
-  let d;
-  try { d = JSON.parse(text); } catch(e) { throw new Error('Token endpoint non-JSON: ' + text.slice(0,300)); }
-  if (!d.access_token) throw new Error('WHOOP OAuth failed: ' + JSON.stringify(d));
-  return { accessToken: d.access_token, newRefreshToken: d.refresh_token || null };
-}
+const ACCESS_TOKEN = (process.env.WHOOP_ACCESS_TOKEN || '').trim();
+const V1 = 'https://api.prod.whoop.com/developer/v1';
+const V2 = 'https://api.prod.whoop.com/developer/v2';
 
 function msToHM(ms) {
   if (!ms) return '0h 0m';
@@ -40,87 +22,52 @@ function msToHM(ms) {
 async function safeJson(res, label) {
   const text = await res.text();
   try { return JSON.parse(text); }
-  catch(e) { throw new Error(`${label} returned ${res.status}: ${text.slice(0,200)}`); }
+  catch(e) { throw new Error(`${label} (${res.status}): ${text.slice(0,150)}`); }
 }
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Whoop-Token');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'Method not allowed' });
 
-  if (!CLIENT_ID || !CLIENT_SECRET || !ENV_TOKEN) {
-    return res.status(500).json({ ok: false, error: 'Missing env vars', debug: {
-      hasClientId: !!CLIENT_ID, hasClientSecret: !!CLIENT_SECRET, hasEnvToken: !!ENV_TOKEN
-    }});
+  if (!ACCESS_TOKEN) {
+    return res.status(500).json({ ok: false, error: 'WHOOP_ACCESS_TOKEN not set in Vercel env vars' });
   }
 
-  // Debug mode -- shows token info without exposing full values
-  if (req.query.debug === '1') {
-    return res.status(200).json({
-      clientIdLen:     CLIENT_ID.length,
-      clientIdStart:   CLIENT_ID.slice(0,8),
-      clientSecretLen: CLIENT_SECRET.length,
-      envTokenLen:     ENV_TOKEN.length,
-      envTokenStart:   ENV_TOKEN.slice(0,8),
-      envTokenEnd:     ENV_TOKEN.slice(-8)
-    });
-  }
-
-  // Use client-supplied token (from localStorage) if present, else fall back to env var
-  const refreshToken = (req.headers['x-whoop-token'] || '').trim() || ENV_TOKEN;
+  const h = { Authorization: `Bearer ${ACCESS_TOKEN}` };
 
   try {
-    const { accessToken, newRefreshToken } = await getAccessToken(refreshToken);
-    const h = { Authorization: `Bearer ${accessToken}` };
-
-    // Fetch latest recovery, cycle, sleep, and last 7 recoveries in parallel
-    const [recRes, cycleRes, sleepRes, weekRes] = await Promise.all([
-      fetch(`${BASE}/recovery/collection?limit=1`, { headers: h }),
-      fetch(`${BASE}/cycle/collection?limit=1`,    { headers: h }),
-      fetch(`${BASE}/sleep/collection?limit=1`,    { headers: h }),
-      fetch(`${BASE}/recovery/collection?limit=7`, { headers: h })
+    // Confirmed working endpoints: v2/recovery, v1/cycle
+    const [recRes, cycleRes, weekRes] = await Promise.all([
+      fetch(`${V2}/recovery?limit=1`, { headers: h }),
+      fetch(`${V1}/cycle?limit=1`,    { headers: h }),
+      fetch(`${V2}/recovery?limit=7`, { headers: h })
     ]);
 
-    const [recData, cycleData, sleepData, weekData] = await Promise.all([
+    const [recData, cycleData, weekData] = await Promise.all([
       safeJson(recRes,   'recovery'),
       safeJson(cycleRes, 'cycle'),
-      safeJson(sleepRes, 'sleep'),
       safeJson(weekRes,  'weeklyRecovery')
     ]);
 
     const rec   = recData.records?.[0];
     const cycle = cycleData.records?.[0];
-    const sleep = sleepData.records?.[0];
     const week  = (weekData.records || []).reverse();
 
+    // Field names confirmed from live API response
     const recovery = rec?.score ? {
-      score: Math.round(rec.score.recovery_score ?? 0),
-      hrv:   Math.round(rec.score.hrv_rms_sd ?? 0),
+      score: Math.round(rec.score.recovery_score    ?? 0),
+      hrv:   Math.round(rec.score.hrv_rmssd_milli   ?? 0),
       rhr:   Math.round(rec.score.resting_heart_rate ?? 0),
-      spo2:  (rec.score.spo2_percentage ?? 0).toFixed(1)
+      spo2:  (rec.score.spo2_percentage              ?? 0).toFixed(1)
     } : null;
 
     const strain = cycle?.score ? {
-      score:  parseFloat((cycle.score.strain ?? 0).toFixed(1)),
+      score:  parseFloat((cycle.score.strain          ?? 0).toFixed(1)),
       avg_hr: Math.round(cycle.score.average_heart_rate ?? 0),
-      max_hr: Math.round(cycle.score.max_heart_rate ?? 0)
-    } : null;
-
-    const sleepOut = sleep?.score ? {
-      performance: Math.round(sleep.score.sleep_performance_percentage ?? 0),
-      stages: {
-        light: msToHM(sleep.score.stage_summary?.total_light_sleep_time_milli),
-        deep:  msToHM(sleep.score.stage_summary?.total_slow_wave_sleep_time_milli),
-        rem:   msToHM(sleep.score.stage_summary?.total_rem_sleep_time_milli),
-        awake: msToHM(sleep.score.stage_summary?.total_awake_time_milli),
-        total: msToHM(
-          (sleep.score.stage_summary?.total_light_sleep_time_milli  ?? 0) +
-          (sleep.score.stage_summary?.total_slow_wave_sleep_time_milli ?? 0) +
-          (sleep.score.stage_summary?.total_rem_sleep_time_milli ?? 0)
-        )
-      }
+      max_hr: Math.round(cycle.score.max_heart_rate     ?? 0)
     } : null;
 
     const weeklyRecovery = week.map(r => ({
@@ -128,15 +75,7 @@ module.exports = async function handler(req, res) {
       score: r.score ? Math.round(r.score.recovery_score ?? 0) : null
     }));
 
-    return res.status(200).json({
-      ok: true,
-      recovery,
-      strain,
-      sleep: sleepOut,
-      weeklyRecovery,
-      // Return new refresh token so client can persist it for next call
-      newRefreshToken: newRefreshToken || null
-    });
+    return res.status(200).json({ ok: true, recovery, strain, sleep: null, weeklyRecovery });
 
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
