@@ -13,17 +13,20 @@ const ENV_TOKEN     = (process.env.WHOOP_REFRESH_TOKEN || '').trim();
 const BASE          = 'https://api.prod.whoop.com/developer/v1';
 
 async function getAccessToken(refreshToken) {
+  const params = new URLSearchParams({
+    grant_type:    'refresh_token',
+    refresh_token: refreshToken,
+    client_id:     CLIENT_ID,
+    client_secret: CLIENT_SECRET
+  });
   const r = await fetch('https://api.prod.whoop.com/oauth/oauth2/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type:    'refresh_token',
-      refresh_token: refreshToken,
-      client_id:     CLIENT_ID,
-      client_secret: CLIENT_SECRET
-    }).toString()
+    body: params.toString()
   });
-  const d = await r.json();
+  const text = await r.text();
+  let d;
+  try { d = JSON.parse(text); } catch(e) { throw new Error('Token endpoint non-JSON: ' + text.slice(0,300)); }
   if (!d.access_token) throw new Error('WHOOP OAuth failed: ' + JSON.stringify(d));
   return { accessToken: d.access_token, newRefreshToken: d.refresh_token || null };
 }
@@ -51,6 +54,18 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ ok: false, error: 'Missing env vars', debug: {
       hasClientId: !!CLIENT_ID, hasClientSecret: !!CLIENT_SECRET, hasEnvToken: !!ENV_TOKEN
     }});
+  }
+
+  // Debug mode -- shows token info without exposing full values
+  if (req.query.debug === '1') {
+    return res.status(200).json({
+      clientIdLen:     CLIENT_ID.length,
+      clientIdStart:   CLIENT_ID.slice(0,8),
+      clientSecretLen: CLIENT_SECRET.length,
+      envTokenLen:     ENV_TOKEN.length,
+      envTokenStart:   ENV_TOKEN.slice(0,8),
+      envTokenEnd:     ENV_TOKEN.slice(-8)
+    });
   }
 
   // Use client-supplied token (from localStorage) if present, else fall back to env var
