@@ -577,76 +577,58 @@
           <div id="dash-task-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px"></div>
         </div>
 
-        <!-- Active Focus -->
-        <div class="card glow-sky">
-          <div class="card-label">Active Focus</div>
-          <div style="font-size:15px;font-weight:500;color:var(--sky);margin-bottom:6px">Dashboard v2</div>
-          <div style="font-size:11px;color:var(--t2);line-height:1.6;font-weight:300">Bento layout, glassmorphism, award-winning UI.</div>
-          <div class="prog-track" style="margin-top:14px"><div class="prog-fill" id="focus-prog" style="width:0%;background:linear-gradient(90deg,var(--sky),var(--violet))"></div></div>
-          <div style="font-size:10px;color:var(--t3);margin-top:5px" id="focus-pct">0% complete</div>
-        </div>
-
         <!-- Active Agents -->
-        <div class="card glow-emerald" style="display:flex;flex-direction:column;gap:0">
+        <div class="card b2 glow-emerald" style="display:flex;flex-direction:column;gap:0">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div class="card-label" style="margin:0">Active Agents</div>
             <div style="font-size:10px;color:var(--emerald)" id="stat-agents">5 running</div>
           </div>
-          <!-- Scout -->
+          <!-- Sloane -->
           <div class="mini-agent-row">
             <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite"></div>
             <span class="mini-agent-icon">🔍</span>
             <div class="mini-agent-info"><span class="mini-agent-name">Sloane</span><span class="mini-agent-role">Chief Agent Officer</span></div>
             <div class="sig-bars"><div class="sig-bar em" style="height:4px"></div><div class="sig-bar em" style="height:7px"></div><div class="sig-bar em" style="height:10px"></div><div class="sig-bar em top" style="height:13px"></div></div>
           </div>
-          <!-- Relay -->
+          <!-- Scout -->
+          <div class="mini-agent-row">
+            <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite .15s"></div>
+            <span class="mini-agent-icon">🛰️</span>
+            <div class="mini-agent-info"><span class="mini-agent-name">Scout</span><span class="mini-agent-role">Research</span></div>
+            <div class="sig-bars"><div class="sig-bar em" style="height:4px"></div><div class="sig-bar em" style="height:7px"></div><div class="sig-bar em" style="height:10px"></div><div class="sig-bar em top" style="height:13px"></div></div>
+          </div>
+          <!-- Charlie -->
           <div class="mini-agent-row">
             <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite .3s"></div>
-            <span class="mini-agent-icon">📡</span>
-            <div class="mini-agent-info"><span class="mini-agent-name">Morning Briefing Agent</span><span class="mini-agent-role">Briefing</span></div>
+            <span class="mini-agent-icon">🌊</span>
+            <div class="mini-agent-info"><span class="mini-agent-name">Charlie</span><span class="mini-agent-role">Deepwater CEO</span></div>
             <div class="sig-bars"><div class="sig-bar em" style="height:4px"></div><div class="sig-bar em" style="height:7px"></div><div class="sig-bar em" style="height:10px"></div><div class="sig-bar em top" style="height:13px"></div></div>
           </div>
-          <!-- Ledger -->
+          <!-- Rusty (not yet deployed) -->
           <div class="mini-agent-row">
-            <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite .6s"></div>
-            <span class="mini-agent-icon">💰</span>
-            <div class="mini-agent-info"><span class="mini-agent-name">Leo</span><span class="mini-agent-role">Editorial Assistant</span></div>
-            <div class="sig-bars"><div class="sig-bar em" style="height:4px"></div><div class="sig-bar em" style="height:7px"></div><div class="sig-bar em" style="height:10px"></div><div class="sig-bar em top" style="height:13px"></div></div>
+            <div class="mini-agent-dot" style="background:var(--amber);box-shadow:0 0 6px rgba(252,211,77,.6);animation:breathe 4s ease-in-out infinite"></div>
+            <span class="mini-agent-icon">🤖</span>
+            <div class="mini-agent-info"><span class="mini-agent-name">Rusty</span><span class="mini-agent-role">Rusty Robot CEO</span></div>
+            <div class="sig-bars"><div class="sig-bar am" style="height:4px"></div><div class="sig-bar dim" style="height:7px"></div><div class="sig-bar dim" style="height:10px"></div><div class="sig-bar dim" style="height:13px"></div></div>
           </div>
-          <!-- Chrono -->
+          <!-- Scripty -->
           <div class="mini-agent-row">
             <div class="mini-agent-dot" style="background:var(--amber);box-shadow:0 0 6px rgba(252,211,77,.6);animation:breathe 4s ease-in-out infinite"></div>
             <span class="mini-agent-icon">🗓️</span>
             <div class="mini-agent-info"><span class="mini-agent-name">Scripty</span><span class="mini-agent-role">Script Writing Agent</span></div>
             <div class="sig-bars"><div class="sig-bar am" style="height:4px"></div><div class="sig-bar am" style="height:7px"></div><div class="sig-bar dim" style="height:10px"></div><div class="sig-bar dim" style="height:13px"></div></div>
           </div>
-          <!-- Cortex -->
+          <!-- Leo -->
           <div class="mini-agent-row">
-            <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite .9s"></div>
-            <span class="mini-agent-icon">🧠</span>
-            <div class="mini-agent-info"><span class="mini-agent-name">Cortex</span><span class="mini-agent-role">Social Media</span></div>
+            <div class="mini-agent-dot" style="background:var(--emerald);box-shadow:0 0 6px rgba(110,231,183,.8);animation:breathe 1.8s ease-in-out infinite .6s"></div>
+            <span class="mini-agent-icon">💰</span>
+            <div class="mini-agent-info"><span class="mini-agent-name">Leo</span><span class="mini-agent-role">Editorial Assistant</span></div>
             <div class="sig-bars"><div class="sig-bar em" style="height:4px"></div><div class="sig-bar em" style="height:7px"></div><div class="sig-bar em" style="height:10px"></div><div class="sig-bar em top" style="height:13px"></div></div>
           </div>
         </div>
 
-        <!-- Tasks Today -->
-        <div class="card">
-          <div class="card-label">Tasks Today</div>
-          <div style="display:flex;align-items:baseline;gap:6px">
-            <div class="card-val sky countable" id="stat-tasks">0</div>
-            <div style="font-size:14px;color:var(--t3);font-weight:300">/ 7</div>
-          </div>
-          <div class="card-sub">4 remaining</div>
-          <div class="sparkline-wrap">
-            <svg width="100%" height="22" viewBox="0 0 120 22" preserveAspectRatio="none">
-              <polygon points="0,22 0,16 20,14 40,18 60,13 80,10 100,7 120,5 120,22" fill="url(#sg-sky)"/>
-              <polyline points="0,16 20,14 40,18 60,13 80,10 100,7 120,5" stroke="#93c5fd" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-            </svg>
-          </div>
-        </div>
-
         <!-- Recovery -->
-        <div class="card glow-emerald">
+        <div class="card b2 glow-emerald">
           <div class="card-label">Recovery</div>
           <div class="card-val emerald countable" id="stat-rec">0<span style="font-size:18px;color:var(--t3)">%</span></div>
           <div class="card-sub emerald">Good · WHOOP</div>
@@ -753,7 +735,7 @@
 
     <!-- ── AGENTS ── -->
     <div class="panel" id="panel-agents">
-      <div class="panel-header"><div class="panel-title">Agents</div><div class="panel-sub">5 active · 0 errors · last heartbeat 12s ago</div></div>
+      <div class="panel-header"><div class="panel-title">Agents</div><div class="panel-sub">5 active · 1 in setup · last heartbeat 12s ago</div></div>
       <div class="agent-grid">
 
         <div class="acard alive">
@@ -768,25 +750,36 @@
         </div>
 
         <div class="acard alive">
-          <div class="ahead"><div class="aavatar">📡</div><div><div class="aname">Morning Briefing Agent</div><div class="arole">Daily Briefing</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
-          <div class="hb-container">
-            <svg class="hb-wave" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
-              <polyline points="0,14 15,14 25,5 35,23 45,14 65,14 75,3 85,25 95,14 115,14 125,7 135,21 145,14 165,14 175,6 185,22 195,14 215,14 225,5 235,23 245,14 265,14 275,3 285,25 295,14 315,14 325,7 335,21 345,14 365,14 375,6 385,22 395,14" stroke="#6ee7b7" stroke-width="1.3" fill="none"/>
-            </svg>
-          </div>
-          <div class="atask">Triaged 34 emails. Flagged 3 priority. 2 drafts pending approval.</div>
-          <div class="ats">Last active 5 min ago · 2,341 tasks completed</div>
-        </div>
-
-        <div class="acard alive">
-          <div class="ahead"><div class="aavatar">💰</div><div><div class="aname">Leo</div><div class="arole">Editorial Assistant</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
+          <div class="ahead"><div class="aavatar">🛰️</div><div><div class="aname">Scout</div><div class="arole">Research Agent</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
           <div class="hb-container">
             <svg class="hb-wave" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
               <polyline points="0,14 20,14 28,7 36,21 44,14 60,14 68,4 76,24 84,14 100,14 108,8 116,20 124,14 140,14 148,6 156,22 164,14 180,14 188,7 196,21 204,14 220,14 228,4 236,24 244,14 260,14 268,8 276,20 284,14 300,14 308,6 316,22 324,14 340,14 348,7 356,21 364,14 380,14 388,8 396,20 400,14" stroke="#6ee7b7" stroke-width="1.3" fill="none"/>
             </svg>
           </div>
-          <div class="atask">8 new transactions categorized. Monthly spend on track. No anomalies.</div>
-          <div class="ats">Last active 11 min ago · 512 tasks completed</div>
+          <div class="atask">Last brief: Claude usage-limits research, delivered to Scripty.</div>
+          <div class="ats">Last active today · 64 tasks completed</div>
+        </div>
+
+        <div class="acard alive">
+          <div class="ahead"><div class="aavatar">🌊</div><div><div class="aname">Charlie</div><div class="arole">Deepwater Sciences CEO</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
+          <div class="hb-container">
+            <svg class="hb-wave" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
+              <polyline points="0,14 10,14 18,2 26,26 34,14 42,14 50,7 58,21 66,14 76,14 84,4 92,24 100,14 110,14 118,2 126,26 134,14 142,14 150,7 158,21 166,14 176,14 184,4 192,24 200,14 210,14 218,2 226,26 234,14 242,14 250,7 258,21 266,14 276,14 284,4 292,24 300,14 310,14 318,2 326,26 334,14 342,14 350,7 358,21 366,14 376,14 384,4 392,24 400,14" stroke="#6ee7b7" stroke-width="1.3" fill="none"/>
+            </svg>
+          </div>
+          <div class="atask">Deepwater launch prep. CMO outreach and legal foundation in progress.</div>
+          <div class="ats">Last active today · 318 tasks completed</div>
+        </div>
+
+        <div class="acard idle">
+          <div class="ahead"><div class="aavatar">🤖</div><div><div class="aname">Rusty</div><div class="arole">Rusty Robot CEO</div></div><div class="astat"><div class="astat-dot" style="background:var(--amber);box-shadow:0 0 7px rgba(252,211,77,.6)"></div><span class="astat-lbl" style="color:var(--amber)">Setup</span></div></div>
+          <div class="hb-container">
+            <svg class="hb-wave slow" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
+              <polyline points="0,14 40,14 50,9 60,19 70,14 110,14 120,10 130,18 140,14 180,14 190,9 200,19 210,14 250,14 260,10 270,18 280,14 320,14 330,9 340,19 350,14 390,14 400,12" stroke="#fcd34d" stroke-width="1.3" fill="none"/>
+            </svg>
+          </div>
+          <div class="atask">Awaiting setup. Rusty Robot command agent not yet deployed.</div>
+          <div class="ats">Not yet active · 0 tasks completed</div>
         </div>
 
         <div class="acard idle">
@@ -801,14 +794,14 @@
         </div>
 
         <div class="acard alive">
-          <div class="ahead"><div class="aavatar">🧠</div><div><div class="aname">Cortex</div><div class="arole">Social Media Manager</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
+          <div class="ahead"><div class="aavatar">💰</div><div><div class="aname">Leo</div><div class="arole">Editorial Assistant</div></div><div class="astat"><div class="astat-dot"></div><span class="astat-lbl" style="color:var(--emerald)">Live</span></div></div>
           <div class="hb-container">
             <svg class="hb-wave" width="400" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
-              <polyline points="0,14 10,14 18,2 26,26 34,14 42,14 50,7 58,21 66,14 76,14 84,4 92,24 100,14 110,14 118,2 126,26 134,14 142,14 150,7 158,21 166,14 176,14 184,4 192,24 200,14 210,14 218,2 226,26 234,14 242,14 250,7 258,21 266,14 276,14 284,4 292,24 300,14 310,14 318,2 326,26 334,14 342,14 350,7 358,21 366,14 376,14 384,4 392,24 400,14" stroke="#6ee7b7" stroke-width="1.3" fill="none"/>
+              <polyline points="0,14 20,14 30,3 40,25 50,14 70,14 80,6 90,22 100,14 120,14 130,4 140,24 150,14 170,14 180,8 190,20 200,14 220,14 230,3 240,25 250,14 270,14 280,6 290,22 300,14 320,14 330,4 340,24 350,14 370,14 380,8 390,20 400,14" stroke="#6ee7b7" stroke-width="1.3" fill="none"/>
             </svg>
           </div>
-          <div class="atask">Building v2 dashboard. Bento layout, glassmorphism, animated.</div>
-          <div class="ats">Last active just now · 9,847 tasks completed</div>
+          <div class="atask">8 new transactions categorized. Monthly spend on track. No anomalies.</div>
+          <div class="ats">Last active 11 min ago · 512 tasks completed</div>
         </div>
 
         <div class="card deploy-card">
@@ -1116,7 +1109,7 @@
       const pct = document.getElementById('focus-pct');
 
       if (tasks) countUp(tasks, 3, 800);
-      if (agents) countUp(agents, 5, 900);
+      if (agents) countUp(agents, 5, 900, '', ' running');
       if (comms) countUp(comms, 12, 700);
       if (rec) {
         const target = whoopRecoveryScore !== null ? whoopRecoveryScore : 0;
