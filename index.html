@@ -83,19 +83,19 @@
 
     /* ── MARKET TICKER (app-wide bottom bar) ── */
     .ticker-bar {
-      flex-shrink:0; height:34px; display:flex; align-items:center; overflow:hidden;
+      flex-shrink:0; height:64px; margin-bottom:30px; display:flex; align-items:center; overflow:hidden;
       position:relative; z-index:5;
-      border-top:1px solid var(--border);
+      border-top:1px solid var(--border); border-bottom:1px solid var(--border);
       background:rgba(8,8,9,0.82); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
     }
-    .ticker-bar::before, .ticker-bar::after { content:''; position:absolute; top:0; bottom:0; width:56px; z-index:2; pointer-events:none; }
+    .ticker-bar::before, .ticker-bar::after { content:''; position:absolute; top:0; bottom:0; width:80px; z-index:2; pointer-events:none; }
     .ticker-bar::before { left:0;  background:linear-gradient(90deg, var(--bg), transparent); }
     .ticker-bar::after  { right:0; background:linear-gradient(270deg, var(--bg), transparent); }
     .ticker-track { display:flex; align-items:center; white-space:nowrap; will-change:transform; animation:ticker-scroll 70s linear infinite; }
     @keyframes ticker-scroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
     .tk-item {
-      display:inline-flex; align-items:center; gap:6px; padding:0 16px;
-      border-right:1px solid var(--border); font-size:11.5px; line-height:1;
+      display:inline-flex; align-items:center; gap:9px; padding:0 24px;
+      border-right:1px solid var(--border); font-size:18px; line-height:1;
       font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;
     }
     .tk-sym { font-weight:600; color:var(--t1); letter-spacing:.02em; }
@@ -103,7 +103,7 @@
     .tk-chg { display:inline-flex; align-items:center; gap:3px; font-weight:500; }
     .tk-chg.up   { color:var(--emerald); }
     .tk-chg.down { color:var(--rose); }
-    .tk-arrow { font-size:8px; }
+    .tk-arrow { font-size:11px; }
     .tk-pct { font-weight:400; opacity:.8; }
 
     /* ── TOPBAR / PRIORITY BAR ── */
