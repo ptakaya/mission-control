@@ -81,6 +81,31 @@
     .status-orb { width:7px; height:7px; border-radius:50%; background:var(--emerald); box-shadow:0 0 10px rgba(110,231,183,.7); animation:breathe 3s ease-in-out infinite; }
     .status-txt { font-size:11px; color:var(--t3); }
 
+    /* ── MARKET TICKER (app-wide bottom bar) ── */
+    .ticker-bar {
+      flex-shrink:0; height:34px; display:flex; align-items:center; overflow:hidden;
+      position:relative; z-index:5;
+      border-top:1px solid var(--border);
+      background:rgba(8,8,9,0.82); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    }
+    .ticker-bar::before, .ticker-bar::after { content:''; position:absolute; top:0; bottom:0; width:56px; z-index:2; pointer-events:none; }
+    .ticker-bar::before { left:0;  background:linear-gradient(90deg, var(--bg), transparent); }
+    .ticker-bar::after  { right:0; background:linear-gradient(270deg, var(--bg), transparent); }
+    .ticker-track { display:flex; align-items:center; white-space:nowrap; will-change:transform; animation:ticker-scroll 70s linear infinite; }
+    @keyframes ticker-scroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+    .tk-item {
+      display:inline-flex; align-items:center; gap:6px; padding:0 16px;
+      border-right:1px solid var(--border); font-size:11.5px; line-height:1;
+      font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;
+    }
+    .tk-sym { font-weight:600; color:var(--t1); letter-spacing:.02em; }
+    .tk-price { color:var(--t2); font-weight:400; }
+    .tk-chg { display:inline-flex; align-items:center; gap:3px; font-weight:500; }
+    .tk-chg.up   { color:var(--emerald); }
+    .tk-chg.down { color:var(--rose); }
+    .tk-arrow { font-size:8px; }
+    .tk-pct { font-weight:400; opacity:.8; }
+
     /* ── TOPBAR / PRIORITY BAR ── */
     .workspace { flex:1; overflow:hidden; display:flex; flex-direction:column; }
     .topbar {
@@ -671,17 +696,11 @@
 
         <!-- Activity Feed -->
         <div class="card b2">
-          <div class="card-label">Recent Activity</div>
+          <div class="card-label">Agent Activity</div>
           <div class="feed-row"><div class="fdot" style="background:var(--emerald)"></div><div><div class="ftxt">Agent Scout completed market research sweep</div><div class="ftime">2 min ago</div></div></div>
           <div class="feed-row"><div class="fdot" style="background:var(--sky)"></div><div><div class="ftxt">Task "Review Q2 finances" marked complete</div><div class="ftime">18 min ago</div></div></div>
           <div class="feed-row"><div class="fdot" style="background:var(--amber)"></div><div><div class="ftxt">Agent Relay flagged 3 priority emails</div><div class="ftime">42 min ago</div></div></div>
           <div class="feed-row"><div class="fdot" style="background:var(--violet)"></div><div><div class="ftxt">WHOOP sync: Recovery updated to 84%</div><div class="ftime">1 hr ago</div></div></div>
-        </div>
-
-        <!-- Coming Up — full width -->
-        <div class="card b4">
-          <div class="card-label" style="margin-bottom:12px">Coming Up</div>
-          <div class="upcoming-list" id="coming-up-list"></div>
         </div>
 
       </div>
@@ -1019,6 +1038,10 @@
       </div>
     </div>
 
+    <!-- ── MARKET TICKER (app-wide bottom bar) ── -->
+    <div class="ticker-bar" id="ticker-bar">
+      <div class="ticker-track" id="ticker-track"></div>
+    </div>
   </main>
 </div>
 
@@ -1868,6 +1891,7 @@
       if (d.vix) { mktSim.vix.val = d.vix.price; mktSim.vix.chg = 0; }
       if (d.tny) { mktSim.tny.val = d.tny.price; mktSim.tny.chg = 0; }
       applyMkt(mktSim);
+      syncTickerFromMarkets(d);
       setMktStatus(true);
     } catch {
       ['dow','ndx','spx','oil','gld'].forEach(k => { mktSim[k].val *= 1 + (Math.random() - 0.5) * 0.0002; });
@@ -1878,6 +1902,99 @@
       setMktStatus(false);
     }
   }
+
+  /* ── MARKET TICKER (app-wide bottom bar) ──
+     The first 8 are wired live to fetchMarkets (price/open -> absolute + % change).
+     The remaining symbols use realistic placeholder values until their quotes are
+     added to the market feed (worker). Wiring them later = just feeding updateTickerLive. */
+  const TICKER_ITEMS = [
+    // live (key links to worker data); seed values shown until first fetch
+    { sym:'DOW',     key:'dow', p:40312.45, a:124.30, c:0.31 },
+    { sym:'NASDAQ',  key:'ndx', p:17891.32, a:62.40,  c:0.35 },
+    { sym:'S&P',     key:'spx', p:5621.03,  a:18.20,  c:0.32 },
+    { sym:'10Y',     key:'tny', p:4.55,     a:0.06,   c:1.34, unit:'%' },
+    { sym:'WTI',     key:'oil', p:53.47,    a:-0.45,  c:-0.83 },
+    { sym:'NAT GAS', key:'gas', p:2.14,     a:0.03,   c:1.23 },
+    { sym:'GOLD',    key:'gld', p:3312.50,  a:15.40,  c:0.47 },
+    { sym:'VIX',     key:'vix', p:21.51,    a:-0.68,  c:-3.06 },
+    // placeholder (no live feed yet)
+    { sym:'SPY',   p:628.40, a:2.15,  c:0.34 },
+    { sym:'QQQ',   p:558.20, a:3.05,  c:0.55 },
+    { sym:'ACHR',  p:9.85,   a:-0.22, c:-2.18 },
+    { sym:'RKLB',  p:27.40,  a:0.95,  c:3.59 },
+    { sym:'NVDA',  p:178.50, a:2.40,  c:1.36 },
+    { sym:'GOOGL', p:196.30, a:1.10,  c:0.56 },
+    { sym:'META',  p:712.80, a:-4.20, c:-0.59 },
+    { sym:'AAPL',  p:241.15, a:0.85,  c:0.35 },
+    { sym:'AMZN',  p:224.60, a:1.75,  c:0.79 },
+    { sym:'MSFT',  p:478.90, a:-1.30, c:-0.27 },
+    { sym:'ORCL',  p:198.40, a:2.65,  c:1.35 },
+    { sym:'TSM',   p:215.70, a:3.10,  c:1.46 },
+    { sym:'AMD',   p:142.80, a:-1.95, c:-1.35 },
+    { sym:'PLTR',  p:84.20,  a:1.45,  c:1.75 },
+    { sym:'TSLA',  p:412.30, a:6.80,  c:1.68 },
+    { sym:'JOBY',  p:9.40,   a:-0.18, c:-1.88 },
+    { sym:'ASTS',  p:38.60,  a:1.75,  c:4.75 },
+    { sym:'GS',    p:612.50, a:3.40,  c:0.56 },
+    { sym:'CLS',   p:168.90, a:4.20,  c:2.55 },
+    { sym:'SNOW',  p:198.70, a:-2.10, c:-1.05 },
+    { sym:'ASML',  p:925.40, a:7.60,  c:0.83 },
+    { sym:'WMT',   p:102.30, a:0.45,  c:0.44 },
+    { sym:'JPM',   p:288.60, a:1.20,  c:0.42 },
+    { sym:'BRK.B', p:498.10, a:-0.90, c:-0.18 },
+    { sym:'QS',    p:6.85,   a:0.32,  c:4.90 },
+  ];
+
+  function tkFmt(n){ return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function tickerItemHTML(it){
+    const up = it.a >= 0;
+    const unit = it.unit || '';
+    const pctStr = (it.c==null) ? '' : ` <span class="tk-pct">(${up?'+':''}${it.c.toFixed(2)}%)</span>`;
+    const keyAttr = it.key ? ` data-tkkey="${it.key}"` : '';
+    return `<span class="tk-item"${keyAttr}>`
+      + `<span class="tk-sym">${it.sym}</span>`
+      + `<span class="tk-price">${tkFmt(it.p)}${unit}</span>`
+      + `<span class="tk-chg ${up?'up':'down'}"><span class="tk-arrow">${up?'▲':'▼'}</span>${up?'+':''}${tkFmt(it.a)}${pctStr}</span>`
+      + `</span>`;
+  }
+
+  function buildTicker(){
+    const track = document.getElementById('ticker-track');
+    if (!track) return;
+    const oneSet = TICKER_ITEMS.map(tickerItemHTML).join('');
+    track.innerHTML = oneSet + oneSet; // two copies => seamless -50% loop
+  }
+
+  function updateTickerLive(key, price, abs, pct){
+    const els = document.querySelectorAll(`#ticker-track .tk-item[data-tkkey="${key}"]`);
+    if (!els.length) return;
+    const it = TICKER_ITEMS.find(x => x.key === key);
+    const unit = (it && it.unit) ? it.unit : '';
+    els.forEach(el => {
+      const pe = el.querySelector('.tk-price'); if (pe) pe.textContent = tkFmt(price) + unit;
+      if (typeof abs === 'number'){
+        const up = abs >= 0;
+        const ce = el.querySelector('.tk-chg');
+        if (ce){
+          ce.className = 'tk-chg ' + (up ? 'up' : 'down');
+          const pctStr = (typeof pct === 'number') ? ` <span class="tk-pct">(${up?'+':''}${pct.toFixed(2)}%)</span>` : '';
+          ce.innerHTML = `<span class="tk-arrow">${up?'▲':'▼'}</span>${up?'+':''}${tkFmt(abs)}${pctStr}`;
+        }
+      }
+    });
+  }
+
+  function syncTickerFromMarkets(d){
+    ['dow','ndx','spx','tny','oil','gas','gld','vix'].forEach(k => {
+      const o = d[k]; if (!o || o.price == null) return;
+      let abs, pct;
+      if (o.open != null && o.open !== 0){ abs = o.price - o.open; pct = (abs / o.open) * 100; }
+      updateTickerLive(k, o.price, abs, pct);
+    });
+  }
+
+  buildTicker();
 
   fetchMarkets();
   setInterval(fetchMarkets, 60000);
